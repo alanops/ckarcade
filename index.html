@@ -16,7 +16,11 @@
       <div class="topbar-stats">
         <div><span class="label">Rank</span><span id="rankValue">Trainee Operator</span></div>
         <div><span class="label">Score</span><span id="scoreValue">0</span></div>
-        <div><span class="label">Mission</span><span id="missionIndex">1 / 4</span></div>
+        <div><span class="label">Mission</span><span id="missionIndex">1 / 6</span></div>
+      </div>
+      <div class="topbar-actions">
+        <button id="soundToggleButton" class="secondary">🔊 Sound On</button>
+        <button id="resetGameButton" class="secondary danger">Reset Game</button>
       </div>
     </header>
 
@@ -64,6 +68,7 @@
           </div>
         </div>
         <div id="missionResult" class="mission-result hidden"></div>
+        <div class="shortcut-note">Shortcuts: Space play/pause · [ back · ] forward · H hint · R reset mission · M toggle sound</div>
       </section>
 
       <section class="panel terminal-panel">
@@ -76,7 +81,12 @@
       </section>
 
       <section class="panel dashboard-panel">
-        <div class="panel-title">Cluster Dashboard</div>
+        <div class="panel-title">Campaign Map</div>
+        <div class="dashboard-card">
+          <div class="label">Mission Select</div>
+          <div id="missionMap" class="mission-map"></div>
+        </div>
+        <div class="panel-title dashboard-subtitle">Cluster Dashboard</div>
         <div class="dashboard-card">
           <div class="label">Active Alerts</div>
           <ul id="alertList" class="alert-list"></ul>

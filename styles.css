@@ -88,6 +88,12 @@ body::before {
   gap: 4px;
 }
 
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .grid-layout {
   display: grid;
   grid-template-columns: 360px minmax(420px, 1fr) 320px;
@@ -211,6 +217,11 @@ button.secondary {
   color: var(--text);
 }
 
+button.danger {
+  background: linear-gradient(180deg, #7f2030, #5c1320);
+  color: #ffe4e8;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -317,6 +328,55 @@ pre {
   white-space: pre-wrap;
   font-family: "Cascadia Code", "Consolas", monospace;
   color: var(--text);
+}
+
+.dashboard-subtitle {
+  margin-top: 16px;
+}
+
+.mission-map {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.mission-map-button {
+  width: 100%;
+  text-align: left;
+  background: linear-gradient(180deg, #1b3556, #112742);
+  color: var(--text);
+  border: 1px solid rgba(80, 200, 255, 0.14);
+}
+
+.mission-map-button .mission-chip {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  background: rgba(80, 200, 255, 0.12);
+  color: var(--muted);
+}
+
+.mission-map-button.active {
+  box-shadow: 0 0 0 1px rgba(177, 140, 255, 0.3);
+  border-color: rgba(177, 140, 255, 0.6);
+}
+
+.mission-map-button.completed .mission-chip {
+  background: rgba(73, 242, 162, 0.14);
+  color: var(--good);
+}
+
+.mission-map-button.locked {
+  opacity: 0.55;
+}
+
+.shortcut-note {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 @media (max-width: 1120px) {

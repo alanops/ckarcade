@@ -146,6 +146,84 @@ const missions = [
       const deploy = state.deployments.find((item) => item.name === 'edge-gateway');
       return Boolean(deploy && deploy.replicas === 3 && deploy.ready === '3/3');
     }
+  },
+  {
+    id: 'night-rollout',
+    zone: 'Deployment Heights',
+    title: 'Night Rollout',
+    story: 'A midnight rollout left the reporting stack stranded on a fake image tag. Restore the reporting deployment before the morning dashboards open.',
+    objective: 'Fix the report-api deployment so both replicas become ready.',
+    duration: 300,
+    hints: [
+      'This mission behaves like an image rollback task.',
+      'Inspect the deployment name and use kubectl set image.',
+      'Try: kubectl set image deployment/report-api report-api=nginx:1.27'
+    ],
+    solution: [
+      'kubectl describe deployment report-api',
+      'kubectl set image deployment/report-api report-api=nginx:1.27'
+    ],
+    createState: () => ({
+      namespace: 'analytics',
+      pods: [
+        { name: 'report-api-8810a', ready: '0/1', status: 'ImagePullBackOff', restarts: 3, age: '9m', labels: { app: 'report-api' }, image: 'nginx:ghost' },
+        { name: 'report-api-8810b', ready: '0/1', status: 'ImagePullBackOff', restarts: 3, age: '9m', labels: { app: 'report-api' }, image: 'nginx:ghost' }
+      ],
+      deployments: [
+        { name: 'report-api', ready: '0/2', upToDate: 2, available: 0, age: '9m', image: 'nginx:ghost', replicas: 2, labels: { app: 'report-api' } }
+      ],
+      services: [
+        { name: 'report-api', type: 'ClusterIP', clusterIP: '10.96.0.71', port: '8080/TCP', age: '9m', selector: { app: 'report-api' } }
+      ],
+      alerts: ['report-api rollout is failing with ImagePullBackOff.'],
+      logs: {
+        'report-api-8810a': 'Failed to pull image "nginx:ghost": image not found.',
+        'report-api-8810b': 'Failed to pull image "nginx:ghost": image not found.'
+      },
+      files: {}
+    }),
+    validator: (state) => {
+      const deploy = state.deployments.find((item) => item.name === 'report-api');
+      return Boolean(deploy && deploy.image === 'nginx:1.27' && deploy.ready === '2/2');
+    }
+  },
+  {
+    id: 'harbor-routing',
+    zone: 'Ingress Harbor',
+    title: 'Harbor Routing',
+    story: 'A shipping tracker service is sending traffic into the void. Patch the selector so Harbor Control can see the tracker pods again.',
+    objective: 'Fix the tracker service selector so it targets tracker-api pods.',
+    duration: 280,
+    hints: [
+      'Compare the service selector with the pod labels.',
+      'Use kubectl describe service tracker for the clue.',
+      'Try: kubectl patch service tracker -p {"spec":{"selector":{"app":"tracker-api"}}}'
+    ],
+    solution: [
+      'kubectl get pods',
+      'kubectl describe service tracker',
+      'kubectl patch service tracker -p {"spec":{"selector":{"app":"tracker-api"}}}'
+    ],
+    createState: () => ({
+      namespace: 'harbor',
+      pods: [
+        { name: 'tracker-api-120aa', ready: '1/1', status: 'Running', restarts: 0, age: '14m', labels: { app: 'tracker-api' }, image: 'ghcr.io/example/tracker:3.1.0' },
+        { name: 'tracker-api-120ab', ready: '1/1', status: 'Running', restarts: 0, age: '14m', labels: { app: 'tracker-api' }, image: 'ghcr.io/example/tracker:3.1.0' }
+      ],
+      deployments: [
+        { name: 'tracker-api', ready: '2/2', upToDate: 2, available: 2, age: '14m', image: 'ghcr.io/example/tracker:3.1.0', replicas: 2, labels: { app: 'tracker-api' } }
+      ],
+      services: [
+        { name: 'tracker', type: 'ClusterIP', clusterIP: '10.96.0.81', port: '8080/TCP', age: '14m', selector: { app: 'tracker' } }
+      ],
+      alerts: ['tracker service has no healthy endpoints.'],
+      logs: {},
+      files: {}
+    }),
+    validator: (state) => {
+      const svc = state.services.find((item) => item.name === 'tracker');
+      return Boolean(svc && svc.selector.app === 'tracker-api');
+    }
   }
 ];
 
@@ -185,7 +263,10 @@ const ui = {
   playbackStatus: document.getElementById('playbackStatus'),
   playbackFill: document.getElementById('playbackFill'),
   playbackStepLabel: document.getElementById('playbackStepLabel'),
-  speedSelect: document.getElementById('speedSelect')
+  speedSelect: document.getElementById('speedSelect'),
+  missionMap: document.getElementById('missionMap'),
+  soundToggleButton: document.getElementById('soundToggleButton'),
+  resetGameButton: document.getElementById('resetGameButton')
 };
 
 const game = {
@@ -202,7 +283,9 @@ const game = {
   playbackPaused: false,
   pauseRequested: false,
   solutionStepIndex: 0,
-  playbackSpeed: 1
+  playbackSpeed: 1,
+  soundEnabled: true,
+  audioContext: null
 };
 
 function loadProgress() {
@@ -212,6 +295,7 @@ function loadProgress() {
     game.completed = Array.isArray(parsed.completed) ? parsed.completed : [];
     game.unlockedIndex = Math.min(parsed.unlockedIndex || 0, missions.length - 1);
     game.missionIndex = Math.min(parsed.missionIndex || 0, game.unlockedIndex);
+    game.soundEnabled = parsed.soundEnabled !== false;
   } catch {
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -222,7 +306,8 @@ function saveProgress() {
     score: game.score,
     completed: game.completed,
     missionIndex: game.missionIndex,
-    unlockedIndex: game.unlockedIndex
+    unlockedIndex: game.unlockedIndex,
+    soundEnabled: game.soundEnabled
   }));
 }
 
@@ -242,6 +327,65 @@ function logLine(text, type = 'normal') {
   line.textContent = text;
   ui.terminalOutput.appendChild(line);
   ui.terminalOutput.scrollTop = ui.terminalOutput.scrollHeight;
+}
+
+function ensureAudio() {
+  if (!game.soundEnabled) return null;
+  if (!game.audioContext) {
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) return null;
+    game.audioContext = new AudioContextCtor();
+  }
+  if (game.audioContext.state === 'suspended') {
+    game.audioContext.resume().catch(() => {});
+  }
+  return game.audioContext;
+}
+
+function playTone(freq = 440, duration = 0.08, type = 'sine', gainValue = 0.03) {
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.value = gainValue;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+  osc.stop(ctx.currentTime + duration);
+}
+
+function playUiClick() {
+  playTone(660, 0.04, 'square', 0.02);
+}
+
+function playSuccessFanfar() {
+  playTone(523, 0.08, 'triangle', 0.03);
+  setTimeout(() => playTone(659, 0.08, 'triangle', 0.03), 70);
+  setTimeout(() => playTone(784, 0.12, 'triangle', 0.03), 140);
+}
+
+function playErrorBuzz() {
+  playTone(180, 0.08, 'sawtooth', 0.025);
+}
+
+function renderMissionMap() {
+  ui.missionMap.innerHTML = '';
+  missions.forEach((mission, index) => {
+    const button = document.createElement('button');
+    const unlocked = index <= game.unlockedIndex;
+    const completed = game.completed.includes(mission.id);
+    button.className = `mission-map-button secondary${index === game.missionIndex ? ' active' : ''}${completed ? ' completed' : ''}${!unlocked ? ' locked' : ''}`;
+    button.disabled = !unlocked || game.solving;
+    button.innerHTML = `<strong>${index + 1}. ${mission.title}</strong><br><span class="mission-chip">${completed ? 'Completed' : unlocked ? mission.zone : 'Locked'}</span>`;
+    button.addEventListener('click', () => {
+      playUiClick();
+      startMission(index);
+    });
+    ui.missionMap.appendChild(button);
+  });
 }
 
 function renderDashboard() {
@@ -287,6 +431,7 @@ function renderStatus() {
   ui.scoreValue.textContent = game.score;
   ui.rankValue.textContent = getRankLabel();
   ui.hintCount.textContent = game.hintUses;
+  ui.soundToggleButton.textContent = game.soundEnabled ? '🔊 Sound On' : '🔈 Sound Off';
 
   const stability = calculateStability();
   ui.stabilityFill.style.width = `${stability}%`;
@@ -312,6 +457,7 @@ function renderStatus() {
   ui.resetMissionButton.disabled = game.solving;
   ui.nextMissionButton.disabled = game.solving || !game.missionComplete || game.missionIndex >= missions.length - 1;
   ui.terminalInput.disabled = game.solving;
+  renderMissionMap();
   renderDashboard();
 }
 
@@ -385,6 +531,7 @@ function completeMission() {
     ? `Mission clear. +${earned} points earned.<br>Time remaining: ${formatTime(game.remainingTime)}<br>Hints used: ${game.hintUses}`
     : `Mission clear. Replay complete.<br>Time remaining: ${formatTime(game.remainingTime)}<br>Hints used: ${game.hintUses}`;
   logLine(firstClear ? 'Mission clear. District stability restored.' : 'Mission clear. Replay complete.', 'success');
+  playSuccessFanfar();
   renderStatus();
 }
 
@@ -516,6 +663,14 @@ function updateAlerts() {
     const underScaled = state.deployments[0].replicas < 3;
     state.alerts = underScaled ? ['edge-gateway capacity is too low for current load.'] : ['Gateway fleet scaled and stable.'];
   }
+  if (mission.id === 'night-rollout') {
+    const broken = state.deployments[0].image !== 'nginx:1.27';
+    state.alerts = broken ? ['report-api rollout is failing with ImagePullBackOff.'] : ['report-api rollout stabilized.'];
+  }
+  if (mission.id === 'harbor-routing') {
+    const mismatch = state.services[0].selector.app !== 'tracker-api';
+    state.alerts = mismatch ? ['tracker service has no healthy endpoints.'] : ['Harbor routing restored.'];
+  }
 }
 
 function handleKubectl(command) {
@@ -549,7 +704,10 @@ function handleKubectl(command) {
   match = command.match(/^kubectl set image deployment\/([a-z0-9-]+) [a-z0-9-]+=([a-z0-9.:/-]+)$/i);
   if (match) {
     const dep = state.deployments.find((item) => item.name === match[1]);
-    if (!dep) return logLine(`Error from server (NotFound): deployments.apps "${match[1]}" not found`, 'error');
+    if (!dep) {
+      playErrorBuzz();
+      return logLine(`Error from server (NotFound): deployments.apps "${match[1]}" not found`, 'error');
+    }
     dep.image = match[2];
     if (dep.image === 'nginx:1.27') {
       dep.ready = `${dep.replicas}/${dep.replicas}`;
@@ -563,6 +721,7 @@ function handleKubectl(command) {
         : `Failed to pull image "${dep.image}"`;
     });
     logLine(`deployment.apps/${dep.name} image updated`, 'success');
+    playUiClick();
     updateAlerts();
     return maybeCompleteMission();
   }
@@ -570,16 +729,21 @@ function handleKubectl(command) {
   match = command.match(/^kubectl patch service ([a-z0-9-]+) -p (.+)$/i);
   if (match) {
     const svc = state.services.find((item) => item.name === match[1]);
-    if (!svc) return logLine(`Error from server (NotFound): services "${match[1]}" not found`, 'error');
+    if (!svc) {
+      playErrorBuzz();
+      return logLine(`Error from server (NotFound): services "${match[1]}" not found`, 'error');
+    }
     try {
       const patch = JSON.parse(match[2]);
       const selector = patch?.spec?.selector;
       if (!selector) throw new Error('missing selector');
       svc.selector = selector;
       logLine(`service/${svc.name} patched`, 'success');
+      playUiClick();
       updateAlerts();
       return maybeCompleteMission();
     } catch {
+      playErrorBuzz();
       return logLine('Patch parse failed. Use valid JSON such as {"spec":{"selector":{"app":"checkout-api"}}}', 'error');
     }
   }
@@ -587,17 +751,22 @@ function handleKubectl(command) {
   match = command.match(/^kubectl scale deployment ([a-z0-9-]+) --replicas=(\d+)$/i);
   if (match) {
     const dep = state.deployments.find((item) => item.name === match[1]);
-    if (!dep) return logLine(`Error from server (NotFound): deployments.apps "${match[1]}" not found`, 'error');
+    if (!dep) {
+      playErrorBuzz();
+      return logLine(`Error from server (NotFound): deployments.apps "${match[1]}" not found`, 'error');
+    }
     dep.replicas = Number(match[2]);
     dep.ready = `${dep.replicas}/${dep.replicas}`;
     dep.upToDate = dep.replicas;
     dep.available = dep.replicas;
     setPodFromDeployment(dep);
     logLine(`deployment.apps/${dep.name} scaled`, 'success');
+    playUiClick();
     updateAlerts();
     return maybeCompleteMission();
   }
 
+  playErrorBuzz();
   return logLine('kubectl command not recognized in this simulator yet.', 'error');
 }
 
@@ -624,6 +793,7 @@ function executeCommand(rawInput, options = {}) {
     ].join('\n'));
   }
   if (command === 'hint') return consumeHint();
+  if (command === 'reset-game') return resetGame();
   if (command.startsWith('kubectl ')) return handleKubectl(command);
   return logLine('Unknown command. Type help for command options.', 'error');
 }
@@ -632,9 +802,27 @@ function consumeHint() {
   const mission = missions[game.missionIndex];
   const hint = mission.hints[game.hintUses];
   if (!hint) return logLine('No more hints available for this mission.', 'warning');
+  playUiClick();
   game.hintUses += 1;
   logLine(`Hint ${game.hintUses}: ${hint}`, 'warning');
   renderStatus();
+}
+
+function resetGame() {
+  const confirmed = window.confirm('Reset all CKArcade progress, score, and unlocked missions?');
+  if (!confirmed) return;
+  clearInterval(game.timerId);
+  localStorage.removeItem(STORAGE_KEY);
+  game.score = 0;
+  game.completed = [];
+  game.unlockedIndex = 0;
+  game.missionIndex = 0;
+  game.hintUses = 0;
+  game.solutionStepIndex = 0;
+  game.missionComplete = false;
+  playErrorBuzz();
+  startMission(0);
+  logLine('Game progress reset. Welcome back, Trainee Operator.', 'warning');
 }
 
 function wait(ms) {
@@ -745,17 +933,69 @@ ui.terminalForm.addEventListener('submit', (event) => {
 });
 
 ui.hintButton.addEventListener('click', consumeHint);
-ui.solutionButton.addEventListener('click', playSolution);
-ui.stepBackButton.addEventListener('click', stepBackSolution);
-ui.stepForwardButton.addEventListener('click', stepForwardSolution);
+ui.solutionButton.addEventListener('click', () => {
+  playUiClick();
+  playSolution();
+});
+ui.stepBackButton.addEventListener('click', () => {
+  playUiClick();
+  stepBackSolution();
+});
+ui.stepForwardButton.addEventListener('click', () => {
+  playUiClick();
+  stepForwardSolution();
+});
 ui.speedSelect.addEventListener('change', () => {
+  playUiClick();
   game.playbackSpeed = Number(ui.speedSelect.value || 1);
   renderStatus();
 });
-ui.resetMissionButton.addEventListener('click', () => startMission(game.missionIndex));
+ui.resetMissionButton.addEventListener('click', () => {
+  playUiClick();
+  startMission(game.missionIndex);
+});
 ui.nextMissionButton.addEventListener('click', () => {
   if (game.missionComplete && game.missionIndex < game.unlockedIndex) {
+    playUiClick();
     startMission(game.missionIndex + 1);
+  }
+});
+ui.soundToggleButton.addEventListener('click', () => {
+  game.soundEnabled = !game.soundEnabled;
+  if (game.soundEnabled) {
+    playUiClick();
+  }
+  saveProgress();
+  renderStatus();
+});
+ui.resetGameButton.addEventListener('click', resetGame);
+
+document.addEventListener('keydown', (event) => {
+  const target = event.target;
+  const typingInInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT');
+  if (typingInInput) return;
+
+  if (event.code === 'Space') {
+    event.preventDefault();
+    playSolution();
+  } else if (event.key === '[') {
+    event.preventDefault();
+    stepBackSolution();
+  } else if (event.key === ']') {
+    event.preventDefault();
+    stepForwardSolution();
+  } else if (event.key.toLowerCase() === 'h') {
+    event.preventDefault();
+    consumeHint();
+  } else if (event.key.toLowerCase() === 'r') {
+    event.preventDefault();
+    startMission(game.missionIndex);
+  } else if (event.key.toLowerCase() === 'm') {
+    event.preventDefault();
+    game.soundEnabled = !game.soundEnabled;
+    saveProgress();
+    renderStatus();
+    if (game.soundEnabled) playUiClick();
   }
 });
 
