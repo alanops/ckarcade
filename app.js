@@ -251,6 +251,7 @@ const ui = {
   terminalInput: document.getElementById('terminalInput'),
   terminalGhost: document.getElementById('terminalGhost'),
   terminalHint: document.getElementById('terminalHint'),
+  terminalSuggestions: document.getElementById('terminalSuggestions'),
   alertList: document.getElementById('alertList'),
   podSummary: document.getElementById('podSummary'),
   serviceSummary: document.getElementById('serviceSummary'),
@@ -391,7 +392,7 @@ function levenshtein(a, b) {
   return dp[a.length][b.length];
 }
 
-function findBestCandidate(raw, candidates) {
+function rankCandidates(raw, candidates) {
   const lowered = raw.toLowerCase();
   return candidates
     .map((candidate) => {
@@ -400,7 +401,24 @@ function findBestCandidate(raw, candidates) {
       const distance = levenshtein(lowered, lowerCandidate.slice(0, Math.max(lowered.length, 1)));
       return { candidate, lowerCandidate, prefix, distance };
     })
-    .sort((a, b) => (b.prefix - a.prefix) || (a.distance - b.distance) || (a.candidate.length - b.candidate.length))[0];
+    .sort((a, b) => (b.prefix - a.prefix) || (a.distance - b.distance) || (a.candidate.length - b.candidate.length));
+}
+
+function setSuggestions(candidates) {
+  ui.terminalSuggestions.innerHTML = '';
+  candidates.slice(0, 3).forEach((candidate) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'suggestion-chip';
+    chip.textContent = candidate;
+    chip.addEventListener('click', () => {
+      playUiClick();
+      ui.terminalInput.value = candidate;
+      updateTerminalGuidance();
+      ui.terminalInput.focus();
+    });
+    ui.terminalSuggestions.appendChild(chip);
+  });
 }
 
 function updateTerminalGuidance() {
@@ -409,6 +427,7 @@ function updateTerminalGuidance() {
   ui.terminalInput.classList.remove('input-invalid', 'input-valid');
   ui.terminalHint.classList.remove('hint-invalid', 'hint-valid');
   ui.terminalGhost.textContent = '';
+  ui.terminalSuggestions.innerHTML = '';
 
   if (!value) {
     ui.terminalHint.textContent = 'Ready for command input.';
@@ -416,20 +435,23 @@ function updateTerminalGuidance() {
   }
 
   const candidates = getCommandCandidates();
+  const ranked = rankCandidates(raw.trim(), candidates);
   const exactCandidate = candidates.find((candidate) => candidate.toLowerCase() === value);
   const partialCandidate = candidates.find((candidate) => candidate.toLowerCase().startsWith(value));
-  const best = findBestCandidate(raw.trim(), candidates);
+  const best = ranked[0];
 
   if (exactCandidate) {
     ui.terminalInput.classList.add('input-valid');
     ui.terminalHint.classList.add('hint-valid');
     ui.terminalHint.textContent = 'Command path recognized.';
+    setSuggestions(ranked.map((item) => item.candidate));
     return;
   }
 
   if (partialCandidate) {
     ui.terminalGhost.textContent = raw + partialCandidate.slice(raw.length);
-    ui.terminalHint.textContent = `Still on track… Press Tab to accept: ${partialCandidate}`;
+    ui.terminalHint.textContent = `Still on track… Press Tab or → to accept: ${partialCandidate}`;
+    setSuggestions(ranked.map((item) => item.candidate));
     return;
   }
 
@@ -440,6 +462,7 @@ function updateTerminalGuidance() {
   ui.terminalHint.textContent = best
     ? `Off the rails after “${wrongChunk}”. Nearest valid command: ${best.candidate}`
     : 'Off the rails: this no longer matches a supported command path.';
+  setSuggestions(ranked.map((item) => item.candidate));
 }
 
 function ensureAudio() {
@@ -1094,7 +1117,7 @@ document.addEventListener('keydown', (event) => {
   const isFormField = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT');
   const isTerminalInput = target === ui.terminalInput;
   const terminalHasTypedText = isTerminalInput && ui.terminalInput.value.trim().length > 0;
-  if (event.code === 'Tab' && isTerminalInput) {
+  if ((event.code === 'Tab' || event.code === 'ArrowRight') && isTerminalInput) {
     const raw = ui.terminalInput.value;
     const partialCandidate = getCommandCandidates().find((candidate) => candidate.toLowerCase().startsWith(raw.trim().toLowerCase()));
     if (partialCandidate && raw.trim()) {

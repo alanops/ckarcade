@@ -356,6 +356,29 @@ button:disabled {
   color: var(--good);
 }
 
+.terminal-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  min-height: 2rem;
+}
+
+.suggestion-chip {
+  background: rgba(80, 200, 255, 0.08);
+  border: 1px solid rgba(80, 200, 255, 0.16);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.suggestion-chip:hover {
+  color: var(--text);
+  border-color: rgba(177, 140, 255, 0.4);
+}
+
 .alert-list {
   margin: 8px 0 0;
   padding-left: 18px;
