@@ -793,7 +793,7 @@ function executeCommand(rawInput, options = {}) {
     ].join('\n'));
   }
   if (command === 'hint') return consumeHint();
-  if (command === 'reset-game') return resetGame();
+  if (command === 'reset-game' || command === 'restart-campaign') return resetGame();
   if (command.startsWith('kubectl ')) return handleKubectl(command);
   return logLine('Unknown command. Type help for command options.', 'error');
 }
@@ -809,7 +809,7 @@ function consumeHint() {
 }
 
 function resetGame() {
-  const confirmed = window.confirm('Reset all CKArcade progress, score, and unlocked missions?');
+  const confirmed = window.confirm('Restart campaign from mission 1 and wipe score, progress, and unlocked missions?');
   if (!confirmed) return;
   clearInterval(game.timerId);
   localStorage.removeItem(STORAGE_KEY);
@@ -822,7 +822,7 @@ function resetGame() {
   game.missionComplete = false;
   playErrorBuzz();
   startMission(0);
-  logLine('Game progress reset. Welcome back, Trainee Operator.', 'warning');
+  logLine('Campaign restarted. Welcome back, Trainee Operator.', 'warning');
 }
 
 function wait(ms) {
