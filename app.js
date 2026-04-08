@@ -249,6 +249,7 @@ const ui = {
   terminalOutput: document.getElementById('terminalOutput'),
   terminalForm: document.getElementById('terminalForm'),
   terminalInput: document.getElementById('terminalInput'),
+  terminalHint: document.getElementById('terminalHint'),
   alertList: document.getElementById('alertList'),
   podSummary: document.getElementById('podSummary'),
   serviceSummary: document.getElementById('serviceSummary'),
@@ -327,6 +328,74 @@ function logLine(text, type = 'normal') {
   line.textContent = text;
   ui.terminalOutput.appendChild(line);
   ui.terminalOutput.scrollTop = ui.terminalOutput.scrollHeight;
+}
+
+function getCommandCandidates() {
+  const mission = missions[game.missionIndex];
+  const state = game.currentState;
+  const base = [
+    'help',
+    'clear',
+    'mission',
+    'status',
+    'hint',
+    'r',
+    'restart-mission',
+    'reset-game',
+    'restart-campaign',
+    'kubectl get pods',
+    'kubectl get deployments',
+    'kubectl get services'
+  ];
+
+  const podCommands = (state?.pods || []).flatMap((pod) => [
+    `kubectl describe pod ${pod.name}`,
+    `kubectl logs ${pod.name}`
+  ]);
+  const deploymentCommands = (state?.deployments || []).flatMap((dep) => [
+    `kubectl describe deployment ${dep.name}`,
+    `kubectl scale deployment ${dep.name} --replicas=${dep.replicas}`,
+    `kubectl scale deployment ${dep.name} --replicas=3`,
+    `kubectl set image deployment/${dep.name} ${dep.name}=nginx:1.27`
+  ]);
+  const serviceCommands = (state?.services || []).flatMap((svc) => [
+    `kubectl describe service ${svc.name}`,
+    `kubectl patch service ${svc.name} -p {"spec":{"selector":{"app":"${svc.selector?.app || 'app'}"}}}`
+  ]);
+
+  return [...new Set([...base, ...(mission.solution || []), ...podCommands, ...deploymentCommands, ...serviceCommands])];
+}
+
+function updateTerminalGuidance() {
+  const raw = ui.terminalInput.value;
+  const value = raw.trim().toLowerCase();
+  ui.terminalInput.classList.remove('input-invalid', 'input-valid');
+  ui.terminalHint.classList.remove('hint-invalid', 'hint-valid');
+
+  if (!value) {
+    ui.terminalHint.textContent = 'Ready for command input.';
+    return;
+  }
+
+  const candidates = getCommandCandidates();
+  const exact = candidates.some((candidate) => candidate.toLowerCase() === value);
+  const partial = candidates.some((candidate) => candidate.toLowerCase().startsWith(value));
+
+  if (exact) {
+    ui.terminalInput.classList.add('input-valid');
+    ui.terminalHint.classList.add('hint-valid');
+    ui.terminalHint.textContent = 'Command path recognized.';
+    return;
+  }
+
+  if (partial) {
+    ui.terminalHint.textContent = 'Still on track…';
+    return;
+  }
+
+  ui.terminalInput.classList.add('input-invalid');
+  ui.terminalHint.classList.add('hint-invalid');
+  ui.terminalHint.textContent = 'Off the rails: this no longer matches a supported command path.';
 }
 
 function ensureAudio() {
@@ -481,6 +550,8 @@ function startMission(index = game.missionIndex) {
   ui.missionResult.classList.add('hidden');
   ui.missionResult.textContent = '';
   ui.terminalOutput.innerHTML = '';
+  ui.terminalInput.value = '';
+  updateTerminalGuidance();
 
   logLine(`=== ${mission.zone}: ${mission.title} ===`, 'success');
   logLine(mission.story);
@@ -931,7 +1002,10 @@ ui.terminalForm.addEventListener('submit', (event) => {
   event.preventDefault();
   executeCommand(ui.terminalInput.value);
   ui.terminalInput.value = '';
+  updateTerminalGuidance();
 });
+
+ui.terminalInput.addEventListener('input', updateTerminalGuidance);
 
 ui.hintButton.addEventListener('click', consumeHint);
 ui.solutionButton.addEventListener('click', () => {
