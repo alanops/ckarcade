@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CKArcade</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar panel">
+      <div>
+        <div class="eyebrow">Retro Kubernetes Incident Simulator</div>
+        <h1>CKArcade</h1>
+      </div>
+      <div class="topbar-stats">
+        <div><span class="label">Rank</span><span id="rankValue">Trainee Operator</span></div>
+        <div><span class="label">Score</span><span id="scoreValue">0</span></div>
+        <div><span class="label">Mission</span><span id="missionIndex">1 / 4</span></div>
+      </div>
+    </header>
+
+    <main class="grid-layout">
+      <section class="panel mission-panel">
+        <div class="panel-title">Mission Briefing</div>
+        <h2 id="missionTitle"></h2>
+        <p id="missionStory" class="mission-story"></p>
+        <div class="mission-meta">
+          <div><span class="label">Zone</span><span id="missionZone"></span></div>
+          <div><span class="label">Objective</span><span id="missionObjective"></span></div>
+          <div><span class="label">Timer</span><span id="timerValue"></span></div>
+          <div><span class="label">Hints Used</span><span id="hintCount">0</span></div>
+        </div>
+        <div class="stability-block">
+          <div class="label">Cluster Stability</div>
+          <div class="meter"><div id="stabilityFill" class="meter-fill"></div></div>
+          <div id="stabilityText" class="meter-text"></div>
+        </div>
+        <div class="button-row">
+          <button id="hintButton">Get Hint</button>
+          <button id="resetMissionButton" class="secondary">Reset Mission</button>
+          <button id="nextMissionButton" class="secondary" disabled>Next Mission</button>
+        </div>
+        <div id="missionResult" class="mission-result hidden"></div>
+      </section>
+
+      <section class="panel terminal-panel">
+        <div class="panel-title">Ops Terminal</div>
+        <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
+        <form id="terminalForm" class="terminal-form">
+          <span class="prompt">operator@ckarcade:~$</span>
+          <input id="terminalInput" type="text" autocomplete="off" spellcheck="false" placeholder="Type help or kubectl get pods" />
+        </form>
+      </section>
+
+      <section class="panel dashboard-panel">
+        <div class="panel-title">Cluster Dashboard</div>
+        <div class="dashboard-card">
+          <div class="label">Active Alerts</div>
+          <ul id="alertList" class="alert-list"></ul>
+        </div>
+        <div class="dashboard-card">
+          <div class="label">Pods</div>
+          <pre id="podSummary"></pre>
+        </div>
+        <div class="dashboard-card">
+          <div class="label">Services</div>
+          <pre id="serviceSummary"></pre>
+        </div>
+        <div class="dashboard-card">
+          <div class="label">Deployments</div>
+          <pre id="deploymentSummary"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
