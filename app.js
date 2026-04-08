@@ -13,6 +13,9 @@ const missions = [
       'The command starts with: kubectl run scout ...',
       'Try: kubectl run scout --image=nginx'
     ],
+    solution: [
+      'kubectl run scout --image=nginx'
+    ],
     createState: () => ({
       namespace: 'ops-lab',
       pods: [],
@@ -38,6 +41,11 @@ const missions = [
       'Inspect the deployment and look for a bad image tag.',
       'Use kubectl set image on deployment/bakery-web.',
       'Try: kubectl set image deployment/bakery-web bakery-web=nginx:1.27'
+    ],
+    solution: [
+      'kubectl get deployments',
+      'kubectl describe deployment bakery-web',
+      'kubectl set image deployment/bakery-web bakery-web=nginx:1.27'
     ],
     createState: () => ({
       namespace: 'bakery',
@@ -77,6 +85,11 @@ const missions = [
       'Use kubectl describe service checkout to inspect the mismatch.',
       'Try: kubectl patch service checkout -p {"spec":{"selector":{"app":"checkout-api"}}}'
     ],
+    solution: [
+      'kubectl get pods',
+      'kubectl describe service checkout',
+      'kubectl patch service checkout -p {"spec":{"selector":{"app":"checkout-api"}}}'
+    ],
     createState: () => ({
       namespace: 'retail',
       pods: [
@@ -109,6 +122,10 @@ const missions = [
       'Check how many replicas the deployment currently has.',
       'Use kubectl scale deployment edge-gateway --replicas=3',
       'You need the deployment to report 3/3 ready replicas.'
+    ],
+    solution: [
+      'kubectl get deployments',
+      'kubectl scale deployment edge-gateway --replicas=3'
     ],
     createState: () => ({
       namespace: 'edge',
@@ -160,6 +177,7 @@ const ui = {
   deploymentSummary: document.getElementById('deploymentSummary'),
   missionResult: document.getElementById('missionResult'),
   hintButton: document.getElementById('hintButton'),
+  solutionButton: document.getElementById('solutionButton'),
   resetMissionButton: document.getElementById('resetMissionButton'),
   nextMissionButton: document.getElementById('nextMissionButton')
 };
@@ -583,6 +601,16 @@ function consumeHint() {
   renderStatus();
 }
 
+function solveMission() {
+  const mission = missions[game.missionIndex];
+  const steps = mission.solution || [];
+  if (!steps.length) {
+    return logLine('No solution is configured for this mission yet.', 'warning');
+  }
+  logLine('Auto-solving mission...', 'success');
+  steps.forEach((step) => executeCommand(step));
+}
+
 ui.terminalForm.addEventListener('submit', (event) => {
   event.preventDefault();
   executeCommand(ui.terminalInput.value);
@@ -590,6 +618,7 @@ ui.terminalForm.addEventListener('submit', (event) => {
 });
 
 ui.hintButton.addEventListener('click', consumeHint);
+ui.solutionButton.addEventListener('click', solveMission);
 ui.resetMissionButton.addEventListener('click', () => startMission(game.missionIndex));
 ui.nextMissionButton.addEventListener('click', () => {
   if (game.missionComplete && game.missionIndex < game.unlockedIndex) {
