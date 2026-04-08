@@ -1128,7 +1128,7 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   if (isFormField && !isTerminalInput) return;
-  if (terminalHasTypedText && !['KeyM', 'KeyR'].includes(event.code)) return;
+  if (terminalHasTypedText) return;
 
   if (event.code === 'Space') {
     event.preventDefault();
