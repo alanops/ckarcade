@@ -793,6 +793,7 @@ function executeCommand(rawInput, options = {}) {
     ].join('\n'));
   }
   if (command === 'hint') return consumeHint();
+  if (command === 'r' || command === 'restart-mission') return startMission(game.missionIndex);
   if (command === 'reset-game' || command === 'restart-campaign') return resetGame();
   if (command.startsWith('kubectl ')) return handleKubectl(command);
   return logLine('Unknown command. Type help for command options.', 'error');
@@ -987,13 +988,14 @@ document.addEventListener('keydown', (event) => {
   } else if (event.key === ']') {
     event.preventDefault();
     stepForwardSolution();
-  } else if (event.key.toLowerCase() === 'h') {
+  } else if (event.code === 'KeyH') {
     event.preventDefault();
     consumeHint();
-  } else if (event.key.toLowerCase() === 'r') {
+  } else if (event.code === 'KeyR') {
     event.preventDefault();
+    playUiClick();
     startMission(game.missionIndex);
-  } else if (event.key.toLowerCase() === 'm') {
+  } else if (event.code === 'KeyM') {
     event.preventDefault();
     game.soundEnabled = !game.soundEnabled;
     saveProgress();
