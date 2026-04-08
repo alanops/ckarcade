@@ -178,6 +178,8 @@ const ui = {
   missionResult: document.getElementById('missionResult'),
   hintButton: document.getElementById('hintButton'),
   solutionButton: document.getElementById('solutionButton'),
+  stepBackButton: document.getElementById('stepBackButton'),
+  stepForwardButton: document.getElementById('stepForwardButton'),
   resetMissionButton: document.getElementById('resetMissionButton'),
   nextMissionButton: document.getElementById('nextMissionButton')
 };
@@ -191,7 +193,10 @@ const game = {
   timerId: null,
   hintUses: 0,
   completed: [],
-  missionComplete: false
+  missionComplete: false,
+  solving: false,
+  playbackPaused: false,
+  solutionStepIndex: 0
 };
 
 function loadProgress() {
@@ -285,7 +290,14 @@ function renderStatus() {
       ? 'Warning: user confidence and uptime are wobbling.'
       : 'Critical: incident pressure is escalating fast.';
 
-  ui.nextMissionButton.disabled = !game.missionComplete || game.missionIndex >= missions.length - 1;
+  const totalSteps = mission.solution?.length || 0;
+  ui.solutionButton.textContent = game.solving ? '⏸ Pause' : '▶ Play';
+  ui.stepBackButton.disabled = game.solving || game.solutionStepIndex <= 0;
+  ui.stepForwardButton.disabled = game.solving || game.solutionStepIndex >= totalSteps || game.missionComplete;
+  ui.hintButton.disabled = game.solving;
+  ui.resetMissionButton.disabled = game.solving;
+  ui.nextMissionButton.disabled = game.solving || !game.missionComplete || game.missionIndex >= missions.length - 1;
+  ui.terminalInput.disabled = game.solving;
   renderDashboard();
 }
 
@@ -298,6 +310,9 @@ function startMission(index = game.missionIndex) {
   game.missionIndex = index;
   game.hintUses = 0;
   game.missionComplete = false;
+  game.solving = false;
+  game.playbackPaused = false;
+  game.solutionStepIndex = 0;
   const mission = missions[index];
   game.currentState = cloneState(mission.createState());
   game.remainingTime = mission.duration;
@@ -567,10 +582,12 @@ function handleKubectl(command) {
   return logLine('kubectl command not recognized in this simulator yet.', 'error');
 }
 
-function executeCommand(rawInput) {
+function executeCommand(rawInput, options = {}) {
   const command = rawInput.trim();
   if (!command) return;
-  logLine(`operator@ckarcade:~$ ${command}`, 'command');
+  if (options.echo !== false) {
+    logLine(`operator@ckarcade:~$ ${command}`, 'command');
+  }
 
   if (command === 'help') return printHelp();
   if (command === 'clear') {
@@ -601,14 +618,89 @@ function consumeHint() {
   renderStatus();
 }
 
-function solveMission() {
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function animateCommand(step) {
+  const prompt = document.createElement('div');
+  prompt.className = 'terminal-line command';
+  ui.terminalOutput.appendChild(prompt);
+
+  const prefix = 'operator@ckarcade:~$ ';
+  for (let i = 0; i <= step.length; i += 1) {
+    prompt.textContent = prefix + step.slice(0, i);
+    ui.terminalOutput.scrollTop = ui.terminalOutput.scrollHeight;
+    await wait(22);
+  }
+
+  await wait(180);
+  executeCommand(step, { echo: false });
+}
+
+async function playSolution() {
   const mission = missions[game.missionIndex];
   const steps = mission.solution || [];
   if (!steps.length) {
     return logLine('No solution is configured for this mission yet.', 'warning');
   }
-  logLine('Auto-solving mission...', 'success');
-  steps.forEach((step) => executeCommand(step));
+  if (game.missionComplete || game.solutionStepIndex >= steps.length) {
+    return;
+  }
+  if (game.solving) {
+    game.playbackPaused = true;
+    game.solving = false;
+    renderStatus();
+    logLine('Playback paused.', 'warning');
+    return;
+  }
+
+  game.solving = true;
+  game.playbackPaused = false;
+  renderStatus();
+  logLine('Playing solution...', 'success');
+
+  while (game.solutionStepIndex < steps.length && !game.playbackPaused && !game.missionComplete) {
+    const step = steps[game.solutionStepIndex];
+    await animateCommand(step);
+    game.solutionStepIndex += 1;
+    renderStatus();
+    await wait(300);
+  }
+
+  game.solving = false;
+  renderStatus();
+}
+
+async function stepForwardSolution() {
+  const mission = missions[game.missionIndex];
+  const steps = mission.solution || [];
+  if (!steps.length || game.solving || game.missionComplete || game.solutionStepIndex >= steps.length) {
+    return;
+  }
+  const step = steps[game.solutionStepIndex];
+  game.solving = true;
+  renderStatus();
+  await animateCommand(step);
+  game.solutionStepIndex += 1;
+  game.solving = false;
+  renderStatus();
+}
+
+function stepBackSolution() {
+  const mission = missions[game.missionIndex];
+  const steps = mission.solution || [];
+  if (!steps.length || game.solving || game.solutionStepIndex <= 0) {
+    return;
+  }
+  const targetStep = game.solutionStepIndex - 1;
+  startMission(game.missionIndex);
+  for (let i = 0; i < targetStep; i += 1) {
+    executeCommand(steps[i]);
+  }
+  game.solutionStepIndex = targetStep;
+  renderStatus();
+  logLine(`Rewound to step ${targetStep} of ${steps.length}.`, 'warning');
 }
 
 ui.terminalForm.addEventListener('submit', (event) => {
@@ -618,7 +710,9 @@ ui.terminalForm.addEventListener('submit', (event) => {
 });
 
 ui.hintButton.addEventListener('click', consumeHint);
-ui.solutionButton.addEventListener('click', solveMission);
+ui.solutionButton.addEventListener('click', playSolution);
+ui.stepBackButton.addEventListener('click', stepBackSolution);
+ui.stepForwardButton.addEventListener('click', stepForwardSolution);
 ui.resetMissionButton.addEventListener('click', () => startMission(game.missionIndex));
 ui.nextMissionButton.addEventListener('click', () => {
   if (game.missionComplete && game.missionIndex < game.unlockedIndex) {
