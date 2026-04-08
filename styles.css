@@ -145,6 +145,50 @@ body::before {
   font-size: 0.9rem;
 }
 
+.playback-panel {
+  margin-top: 16px;
+  background: rgba(6, 13, 24, 0.72);
+  border: 1px solid rgba(80, 200, 255, 0.12);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.playback-header,
+.playback-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.playback-header {
+  margin-bottom: 8px;
+}
+
+.playback-meter {
+  margin: 8px 0 10px;
+}
+
+.playback-fill {
+  background: linear-gradient(90deg, var(--purple), var(--accent));
+}
+
+.speed-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.speed-control select {
+  background: rgba(3, 7, 13, 0.85);
+  color: var(--text);
+  border: 1px solid rgba(80, 200, 255, 0.16);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
 .button-row {
   display: flex;
   flex-wrap: wrap;
@@ -203,6 +247,22 @@ button:disabled {
 
 .terminal-line.command {
   color: var(--accent);
+}
+
+.terminal-line.typing {
+  color: var(--accent);
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 0.62ch;
+  color: var(--good);
+  animation: blink-cursor 0.9s steps(1, end) infinite;
+}
+
+@keyframes blink-cursor {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
 }
 
 .terminal-line.success {

@@ -181,7 +181,11 @@ const ui = {
   stepBackButton: document.getElementById('stepBackButton'),
   stepForwardButton: document.getElementById('stepForwardButton'),
   resetMissionButton: document.getElementById('resetMissionButton'),
-  nextMissionButton: document.getElementById('nextMissionButton')
+  nextMissionButton: document.getElementById('nextMissionButton'),
+  playbackStatus: document.getElementById('playbackStatus'),
+  playbackFill: document.getElementById('playbackFill'),
+  playbackStepLabel: document.getElementById('playbackStepLabel'),
+  speedSelect: document.getElementById('speedSelect')
 };
 
 const game = {
@@ -196,7 +200,9 @@ const game = {
   missionComplete: false,
   solving: false,
   playbackPaused: false,
-  solutionStepIndex: 0
+  pauseRequested: false,
+  solutionStepIndex: 0,
+  playbackSpeed: 1
 };
 
 function loadProgress() {
@@ -291,7 +297,15 @@ function renderStatus() {
       : 'Critical: incident pressure is escalating fast.';
 
   const totalSteps = mission.solution?.length || 0;
+  const progress = totalSteps ? (game.solutionStepIndex / totalSteps) * 100 : 0;
   ui.solutionButton.textContent = game.solving ? '⏸ Pause' : '▶ Play';
+  ui.playbackStatus.textContent = game.missionComplete
+    ? 'Complete'
+    : game.solving
+      ? (game.pauseRequested ? 'Pausing after current command…' : 'Playing')
+      : (game.solutionStepIndex > 0 ? 'Paused' : 'Idle');
+  ui.playbackFill.style.width = `${progress}%`;
+  ui.playbackStepLabel.textContent = `Step ${game.solutionStepIndex} / ${totalSteps}`;
   ui.stepBackButton.disabled = game.solving || game.solutionStepIndex <= 0;
   ui.stepForwardButton.disabled = game.solving || game.solutionStepIndex >= totalSteps || game.missionComplete;
   ui.hintButton.disabled = game.solving;
@@ -312,7 +326,9 @@ function startMission(index = game.missionIndex) {
   game.missionComplete = false;
   game.solving = false;
   game.playbackPaused = false;
+  game.pauseRequested = false;
   game.solutionStepIndex = 0;
+  game.playbackSpeed = Number(ui.speedSelect?.value || 1);
   const mission = missions[index];
   game.currentState = cloneState(mission.createState());
   game.remainingTime = mission.duration;
@@ -625,19 +641,26 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function scaledDelay(ms) {
+  return Math.max(20, Math.round(ms / game.playbackSpeed));
+}
+
 async function animateCommand(step) {
   const prompt = document.createElement('div');
-  prompt.className = 'terminal-line command';
+  prompt.className = 'terminal-line typing';
   ui.terminalOutput.appendChild(prompt);
 
   const prefix = 'operator@ckarcade:~$ ';
   for (let i = 0; i <= step.length; i += 1) {
-    prompt.textContent = prefix + step.slice(0, i);
+    const typed = step.slice(0, i);
+    prompt.innerHTML = `${prefix}${typed}<span class="terminal-cursor">█</span>`;
     ui.terminalOutput.scrollTop = ui.terminalOutput.scrollHeight;
-    await wait(22);
+    await wait(scaledDelay(22));
   }
 
-  await wait(180);
+  prompt.className = 'terminal-line command';
+  prompt.textContent = `${prefix}${step}`;
+  await wait(scaledDelay(180));
   executeCommand(step, { echo: false });
 }
 
@@ -651,27 +674,35 @@ async function playSolution() {
     return;
   }
   if (game.solving) {
-    game.playbackPaused = true;
-    game.solving = false;
+    game.pauseRequested = true;
     renderStatus();
-    logLine('Playback paused.', 'warning');
     return;
   }
 
   game.solving = true;
   game.playbackPaused = false;
+  game.pauseRequested = false;
   renderStatus();
   logLine('Playing solution...', 'success');
 
-  while (game.solutionStepIndex < steps.length && !game.playbackPaused && !game.missionComplete) {
+  while (game.solutionStepIndex < steps.length && !game.missionComplete) {
     const step = steps[game.solutionStepIndex];
     await animateCommand(step);
     game.solutionStepIndex += 1;
     renderStatus();
-    await wait(300);
+    if (game.pauseRequested) {
+      game.playbackPaused = true;
+      game.pauseRequested = false;
+      game.solving = false;
+      logLine('Playback paused.', 'warning');
+      renderStatus();
+      return;
+    }
+    await wait(scaledDelay(300));
   }
 
   game.solving = false;
+  game.playbackPaused = false;
   renderStatus();
 }
 
@@ -683,6 +714,7 @@ async function stepForwardSolution() {
   }
   const step = steps[game.solutionStepIndex];
   game.solving = true;
+  game.pauseRequested = false;
   renderStatus();
   await animateCommand(step);
   game.solutionStepIndex += 1;
@@ -716,6 +748,10 @@ ui.hintButton.addEventListener('click', consumeHint);
 ui.solutionButton.addEventListener('click', playSolution);
 ui.stepBackButton.addEventListener('click', stepBackSolution);
 ui.stepForwardButton.addEventListener('click', stepForwardSolution);
+ui.speedSelect.addEventListener('change', () => {
+  game.playbackSpeed = Number(ui.speedSelect.value || 1);
+  renderStatus();
+});
 ui.resetMissionButton.addEventListener('click', () => startMission(game.missionIndex));
 ui.nextMissionButton.addEventListener('click', () => {
   if (game.missionComplete && game.missionIndex < game.unlockedIndex) {
