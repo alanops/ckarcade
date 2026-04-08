@@ -480,7 +480,11 @@ function updateTerminalGuidance() {
   }
 
   const candidates = getCommandCandidates();
-  const ranked = rankCandidates(raw.trim(), candidates);
+  const kubectlVerbMatch = value.match(/^kubectl\s+([a-z-]+)$/);
+  const preferredCandidates = kubectlVerbMatch
+    ? candidates.filter((candidate) => candidate.toLowerCase().startsWith(`kubectl ${kubectlVerbMatch[1]}`))
+    : candidates;
+  const ranked = rankCandidates(raw.trim(), preferredCandidates.length ? preferredCandidates : candidates);
   const exactCandidate = candidates.find((candidate) => candidate.toLowerCase() === value);
   const partialCandidate = ranked.find((item) => item.lowerCandidate.startsWith(value))?.candidate;
   const best = ranked[0];
