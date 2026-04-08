@@ -424,14 +424,19 @@ function levenshtein(a, b) {
 
 function rankCandidates(raw, candidates) {
   const lowered = raw.toLowerCase();
+  const missionSolutions = new Set((missions[game.missionIndex].solution || []).map((item) => item.toLowerCase()));
   return candidates
     .map((candidate) => {
       const lowerCandidate = candidate.toLowerCase();
       const prefix = longestCommonPrefixLength(lowered, lowerCandidate);
       const distance = levenshtein(lowered, lowerCandidate.slice(0, Math.max(lowered.length, 1)));
-      return { candidate, lowerCandidate, prefix, distance };
+      const words = lowered.split(/\s+/).filter(Boolean);
+      const candidateWords = lowerCandidate.split(/\s+/);
+      const verbBoost = words.some((word) => candidateWords.includes(word)) ? 1 : 0;
+      const missionBoost = missionSolutions.has(lowerCandidate) ? 1 : 0;
+      return { candidate, lowerCandidate, prefix, distance, verbBoost, missionBoost };
     })
-    .sort((a, b) => (b.prefix - a.prefix) || (a.distance - b.distance) || (a.candidate.length - b.candidate.length));
+    .sort((a, b) => (b.prefix - a.prefix) || (b.verbBoost - a.verbBoost) || (b.missionBoost - a.missionBoost) || (a.distance - b.distance) || (a.candidate.length - b.candidate.length));
 }
 
 function setSuggestions(candidates) {
@@ -469,7 +474,7 @@ function updateTerminalGuidance() {
   const candidates = getCommandCandidates();
   const ranked = rankCandidates(raw.trim(), candidates);
   const exactCandidate = candidates.find((candidate) => candidate.toLowerCase() === value);
-  const partialCandidate = candidates.find((candidate) => candidate.toLowerCase().startsWith(value));
+  const partialCandidate = ranked.find((item) => item.lowerCandidate.startsWith(value))?.candidate;
   const best = ranked[0];
 
   if (exactCandidate) {
