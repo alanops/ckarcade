@@ -351,10 +351,11 @@ function completeMission() {
   const timeBonus = Math.round((game.remainingTime / missions[game.missionIndex].duration) * 180);
   const hintPenalty = game.hintUses * 35;
   const earned = Math.max(120, base + timeBonus - hintPenalty);
-  game.score += earned;
 
   const missionId = missions[game.missionIndex].id;
-  if (!game.completed.includes(missionId)) {
+  const firstClear = !game.completed.includes(missionId);
+  if (firstClear) {
+    game.score += earned;
     game.completed.push(missionId);
   }
   if (game.missionIndex < missions.length - 1) {
@@ -364,8 +365,10 @@ function completeMission() {
 
   game.currentState.alerts = ['All systems green. Incident resolved.'];
   ui.missionResult.classList.remove('hidden');
-  ui.missionResult.innerHTML = `Mission clear. +${earned} points earned.<br>Time remaining: ${formatTime(game.remainingTime)}<br>Hints used: ${game.hintUses}`;
-  logLine('Mission clear. District stability restored.', 'success');
+  ui.missionResult.innerHTML = firstClear
+    ? `Mission clear. +${earned} points earned.<br>Time remaining: ${formatTime(game.remainingTime)}<br>Hints used: ${game.hintUses}`
+    : `Mission clear. Replay complete.<br>Time remaining: ${formatTime(game.remainingTime)}<br>Hints used: ${game.hintUses}`;
+  logLine(firstClear ? 'Mission clear. District stability restored.' : 'Mission clear. Replay complete.', 'success');
   renderStatus();
 }
 
