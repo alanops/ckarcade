@@ -447,21 +447,31 @@ function rankCandidates(raw, candidates) {
     .sort((a, b) => (b.prefix - a.prefix) || (b.verbBoost - a.verbBoost) || (b.missionBoost - a.missionBoost) || (a.distance - b.distance) || (a.candidate.length - b.candidate.length));
 }
 
-function setSuggestions(candidates) {
+function setSuggestions(rankedItems) {
   ui.terminalSuggestions.innerHTML = '';
-  candidates.slice(0, 3).forEach((candidate) => {
+  rankedItems.slice(0, 3).forEach((item) => {
     const chip = document.createElement('button');
     chip.type = 'button';
-    chip.className = 'suggestion-chip';
-    chip.textContent = candidate;
+    chip.className = `suggestion-chip${item.missionBoost ? ' mission-priority' : ''}`;
+    chip.textContent = item.candidate;
     chip.addEventListener('click', () => {
       playUiClick();
-      ui.terminalInput.value = candidate;
+      ui.terminalInput.value = item.candidate;
       updateTerminalGuidance();
       ui.terminalInput.focus();
     });
     ui.terminalSuggestions.appendChild(chip);
   });
+}
+
+function renderGhostCommand(raw, suggestion) {
+  if (!suggestion) return '';
+  const suffix = suggestion.slice(raw.length);
+  const parts = suggestion.split(' ');
+  return `${raw}<span class="ghost-cmd">${suffix.replace(/^([^\s]+)/, (match) => match)}</span>`
+    .replace(/(kubectl)([^<]*)/, '<span class="ghost-cmd">$1</span>$2')
+    .replace(/\b(get|describe|logs|run|set|patch|scale)\b/, '<span class="ghost-verb">$1</span>')
+    .replace(/(<[^>]+>|--[a-z-]+(?:=[^\s]+)?|\{[^}]+\}|[a-z0-9-]+\/[a-z0-9-]+=[^\s]+)/gi, '<span class="ghost-arg">$1</span>');
 }
 
 function updateTerminalGuidance() {
@@ -495,16 +505,16 @@ function updateTerminalGuidance() {
     ui.terminalHint.textContent = 'Command path recognized.';
     ui.terminalDocLink.href = getDocLinkForCommand(exactCandidate);
     ui.terminalDocLink.textContent = 'Official Kubernetes docs for this command';
-    setSuggestions(ranked.map((item) => item.candidate));
+    setSuggestions(ranked);
     return;
   }
 
   if (partialCandidate) {
-    ui.terminalGhost.textContent = raw + partialCandidate.slice(raw.length);
+    ui.terminalGhost.innerHTML = renderGhostCommand(raw, partialCandidate);
     ui.terminalHint.textContent = `Still on track… Press Tab or → to accept: ${partialCandidate}`;
     ui.terminalDocLink.href = getDocLinkForCommand(partialCandidate);
     ui.terminalDocLink.textContent = 'Official Kubernetes docs for this command';
-    setSuggestions(ranked.map((item) => item.candidate));
+    setSuggestions(ranked);
     return;
   }
 
@@ -519,7 +529,7 @@ function updateTerminalGuidance() {
     ui.terminalDocLink.href = getDocLinkForCommand(best.candidate);
     ui.terminalDocLink.textContent = 'Official Kubernetes docs for nearest command';
   }
-  setSuggestions(ranked.map((item) => item.candidate));
+  setSuggestions(ranked);
 }
 
 function ensureAudio() {
@@ -1176,7 +1186,7 @@ document.addEventListener('keydown', (event) => {
   const terminalHasTypedText = isTerminalInput && ui.terminalInput.value.trim().length > 0;
   if ((event.code === 'Tab' || event.code === 'ArrowRight') && isTerminalInput) {
     const raw = ui.terminalInput.value;
-    const partialCandidate = getCommandCandidates().find((candidate) => candidate.toLowerCase().startsWith(raw.trim().toLowerCase()));
+    const partialCandidate = rankCandidates(raw.trim(), getCommandCandidates()).find((item) => item.lowerCandidate.startsWith(raw.trim().toLowerCase()))?.candidate;
     if (partialCandidate && raw.trim()) {
       event.preventDefault();
       ui.terminalInput.value = partialCandidate;
@@ -1185,7 +1195,17 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   if (isFormField && !isTerminalInput) return;
-  if (terminalHasTypedText) return;
+  if (terminalHasTypedText) {
+    if (event.code === 'Enter' && ui.terminalInput.classList.contains('input-invalid')) {
+      const topSuggestion = ui.terminalSuggestions.querySelector('.suggestion-chip');
+      if (topSuggestion) {
+        event.preventDefault();
+        ui.terminalInput.value = topSuggestion.textContent;
+        updateTerminalGuidance();
+      }
+    }
+    return;
+  }
 
   if (event.code === 'Space') {
     event.preventDefault();
