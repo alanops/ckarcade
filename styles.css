@@ -298,6 +298,23 @@ button:disabled {
   padding: 12px;
 }
 
+.terminal-input-stack {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.terminal-ghost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: rgba(136, 168, 200, 0.45);
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.95rem;
+  white-space: pre;
+  overflow: hidden;
+}
+
 .prompt {
   color: var(--good);
   font-family: "Cascadia Code", "Consolas", monospace;
@@ -305,6 +322,7 @@ button:disabled {
 }
 
 #terminalInput {
+  position: relative;
   background: transparent;
   border: 0;
   outline: none;

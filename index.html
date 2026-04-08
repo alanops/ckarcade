@@ -76,7 +76,10 @@
         <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
         <form id="terminalForm" class="terminal-form">
           <span class="prompt">operator@ckarcade:~$</span>
-          <input id="terminalInput" type="text" autocomplete="off" spellcheck="false" placeholder="Type help or kubectl get pods" />
+          <div class="terminal-input-stack">
+            <div id="terminalGhost" class="terminal-ghost" aria-hidden="true"></div>
+            <input id="terminalInput" type="text" autocomplete="off" spellcheck="false" placeholder="Type help or kubectl get pods" />
+          </div>
         </form>
         <div id="terminalHint" class="terminal-hint">Ready for command input.</div>
       </section>

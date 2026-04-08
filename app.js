@@ -249,6 +249,7 @@ const ui = {
   terminalOutput: document.getElementById('terminalOutput'),
   terminalForm: document.getElementById('terminalForm'),
   terminalInput: document.getElementById('terminalInput'),
+  terminalGhost: document.getElementById('terminalGhost'),
   terminalHint: document.getElementById('terminalHint'),
   alertList: document.getElementById('alertList'),
   podSummary: document.getElementById('podSummary'),
@@ -366,11 +367,48 @@ function getCommandCandidates() {
   return [...new Set([...base, ...(mission.solution || []), ...podCommands, ...deploymentCommands, ...serviceCommands])];
 }
 
+function longestCommonPrefixLength(a, b) {
+  const max = Math.min(a.length, b.length);
+  let i = 0;
+  while (i < max && a[i] === b[i]) i += 1;
+  return i;
+}
+
+function levenshtein(a, b) {
+  const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i += 1) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j += 1) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+function findBestCandidate(raw, candidates) {
+  const lowered = raw.toLowerCase();
+  return candidates
+    .map((candidate) => {
+      const lowerCandidate = candidate.toLowerCase();
+      const prefix = longestCommonPrefixLength(lowered, lowerCandidate);
+      const distance = levenshtein(lowered, lowerCandidate.slice(0, Math.max(lowered.length, 1)));
+      return { candidate, lowerCandidate, prefix, distance };
+    })
+    .sort((a, b) => (b.prefix - a.prefix) || (a.distance - b.distance) || (a.candidate.length - b.candidate.length))[0];
+}
+
 function updateTerminalGuidance() {
   const raw = ui.terminalInput.value;
   const value = raw.trim().toLowerCase();
   ui.terminalInput.classList.remove('input-invalid', 'input-valid');
   ui.terminalHint.classList.remove('hint-invalid', 'hint-valid');
+  ui.terminalGhost.textContent = '';
 
   if (!value) {
     ui.terminalHint.textContent = 'Ready for command input.';
@@ -378,24 +416,30 @@ function updateTerminalGuidance() {
   }
 
   const candidates = getCommandCandidates();
-  const exact = candidates.some((candidate) => candidate.toLowerCase() === value);
-  const partial = candidates.some((candidate) => candidate.toLowerCase().startsWith(value));
+  const exactCandidate = candidates.find((candidate) => candidate.toLowerCase() === value);
+  const partialCandidate = candidates.find((candidate) => candidate.toLowerCase().startsWith(value));
+  const best = findBestCandidate(raw.trim(), candidates);
 
-  if (exact) {
+  if (exactCandidate) {
     ui.terminalInput.classList.add('input-valid');
     ui.terminalHint.classList.add('hint-valid');
     ui.terminalHint.textContent = 'Command path recognized.';
     return;
   }
 
-  if (partial) {
-    ui.terminalHint.textContent = 'Still on track…';
+  if (partialCandidate) {
+    ui.terminalGhost.textContent = raw + partialCandidate.slice(raw.length);
+    ui.terminalHint.textContent = `Still on track… Press Tab to accept: ${partialCandidate}`;
     return;
   }
 
+  const mismatchAt = best ? longestCommonPrefixLength(value, best.lowerCandidate) : 0;
+  const wrongChunk = raw.trim().slice(mismatchAt) || raw.trim().slice(-1);
   ui.terminalInput.classList.add('input-invalid');
   ui.terminalHint.classList.add('hint-invalid');
-  ui.terminalHint.textContent = 'Off the rails: this no longer matches a supported command path.';
+  ui.terminalHint.textContent = best
+    ? `Off the rails after “${wrongChunk}”. Nearest valid command: ${best.candidate}`
+    : 'Off the rails: this no longer matches a supported command path.';
 }
 
 function ensureAudio() {
@@ -1050,6 +1094,16 @@ document.addEventListener('keydown', (event) => {
   const isFormField = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT');
   const isTerminalInput = target === ui.terminalInput;
   const terminalHasTypedText = isTerminalInput && ui.terminalInput.value.trim().length > 0;
+  if (event.code === 'Tab' && isTerminalInput) {
+    const raw = ui.terminalInput.value;
+    const partialCandidate = getCommandCandidates().find((candidate) => candidate.toLowerCase().startsWith(raw.trim().toLowerCase()));
+    if (partialCandidate && raw.trim()) {
+      event.preventDefault();
+      ui.terminalInput.value = partialCandidate;
+      updateTerminalGuidance();
+    }
+    return;
+  }
   if (isFormField && !isTerminalInput) return;
   if (terminalHasTypedText && !['KeyM', 'KeyR'].includes(event.code)) return;
 
