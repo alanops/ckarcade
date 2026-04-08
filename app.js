@@ -972,8 +972,11 @@ ui.resetGameButton.addEventListener('click', resetGame);
 
 document.addEventListener('keydown', (event) => {
   const target = event.target;
-  const typingInInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT');
-  if (typingInInput) return;
+  const isFormField = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT');
+  const isTerminalInput = target === ui.terminalInput;
+  const terminalHasTypedText = isTerminalInput && ui.terminalInput.value.trim().length > 0;
+  if (isFormField && !isTerminalInput) return;
+  if (terminalHasTypedText && !['KeyM', 'KeyR'].includes(event.code)) return;
 
   if (event.code === 'Space') {
     event.preventDefault();
