@@ -377,7 +377,15 @@ function getCommandCandidates() {
     'restart-campaign',
     'kubectl get pods',
     'kubectl get deployments',
-    'kubectl get services'
+    'kubectl get services',
+    'kubectl describe pod <name>',
+    'kubectl describe deployment <name>',
+    'kubectl describe service <name>',
+    'kubectl logs <pod-name>',
+    'kubectl run scout --image=nginx',
+    'kubectl set image deployment/<name> <container>=nginx:1.27',
+    'kubectl patch service <name> -p {"spec":{"selector":{"app":"value"}}}',
+    'kubectl scale deployment <name> --replicas=3'
   ];
 
   const podCommands = (state?.pods || []).flatMap((pod) => [
