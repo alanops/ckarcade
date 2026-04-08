@@ -356,6 +356,18 @@ button:disabled {
   color: var(--good);
 }
 
+.terminal-doc-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--accent);
+  font-size: 0.83rem;
+  text-decoration: none;
+}
+
+.terminal-doc-link:hover {
+  text-decoration: underline;
+}
+
 .terminal-suggestions {
   display: flex;
   flex-wrap: wrap;

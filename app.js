@@ -251,6 +251,7 @@ const ui = {
   terminalInput: document.getElementById('terminalInput'),
   terminalGhost: document.getElementById('terminalGhost'),
   terminalHint: document.getElementById('terminalHint'),
+  terminalDocLink: document.getElementById('terminalDocLink'),
   terminalSuggestions: document.getElementById('terminalSuggestions'),
   alertList: document.getElementById('alertList'),
   podSummary: document.getElementById('podSummary'),
@@ -330,6 +331,35 @@ function logLine(text, type = 'normal') {
   line.textContent = text;
   ui.terminalOutput.appendChild(line);
   ui.terminalOutput.scrollTop = ui.terminalOutput.scrollHeight;
+}
+
+function getDocLinkForCommand(command) {
+  const value = (command || '').trim().toLowerCase();
+  if (!value || value === 'help' || value === 'status' || value === 'mission' || value === 'hint') {
+    return 'https://kubernetes.io/docs/reference/kubectl/';
+  }
+  if (value.startsWith('kubectl get ')) {
+    return 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_get/';
+  }
+  if (value.startsWith('kubectl describe ')) {
+    return 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_describe/';
+  }
+  if (value.startsWith('kubectl logs ')) {
+    return 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/';
+  }
+  if (value.startsWith('kubectl run ')) {
+    return 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_run/';
+  }
+  if (value.startsWith('kubectl set image ')) {
+    return 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_set/kubectl_set_image/';
+  }
+  if (value.startsWith('kubectl patch ')) {
+    return 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_patch/';
+  }
+  if (value.startsWith('kubectl scale ')) {
+    return 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_scale/';
+  }
+  return 'https://kubernetes.io/docs/reference/kubectl/';
 }
 
 function getCommandCandidates() {
@@ -428,6 +458,8 @@ function updateTerminalGuidance() {
   ui.terminalHint.classList.remove('hint-invalid', 'hint-valid');
   ui.terminalGhost.textContent = '';
   ui.terminalSuggestions.innerHTML = '';
+  ui.terminalDocLink.href = 'https://kubernetes.io/docs/reference/kubectl/';
+  ui.terminalDocLink.textContent = 'Official Kubernetes docs for further reading';
 
   if (!value) {
     ui.terminalHint.textContent = 'Ready for command input.';
@@ -444,6 +476,8 @@ function updateTerminalGuidance() {
     ui.terminalInput.classList.add('input-valid');
     ui.terminalHint.classList.add('hint-valid');
     ui.terminalHint.textContent = 'Command path recognized.';
+    ui.terminalDocLink.href = getDocLinkForCommand(exactCandidate);
+    ui.terminalDocLink.textContent = 'Official Kubernetes docs for this command';
     setSuggestions(ranked.map((item) => item.candidate));
     return;
   }
@@ -451,6 +485,8 @@ function updateTerminalGuidance() {
   if (partialCandidate) {
     ui.terminalGhost.textContent = raw + partialCandidate.slice(raw.length);
     ui.terminalHint.textContent = `Still on track… Press Tab or → to accept: ${partialCandidate}`;
+    ui.terminalDocLink.href = getDocLinkForCommand(partialCandidate);
+    ui.terminalDocLink.textContent = 'Official Kubernetes docs for this command';
     setSuggestions(ranked.map((item) => item.candidate));
     return;
   }
@@ -462,6 +498,10 @@ function updateTerminalGuidance() {
   ui.terminalHint.textContent = best
     ? `Off the rails after “${wrongChunk}”. Nearest valid command: ${best.candidate}`
     : 'Off the rails: this no longer matches a supported command path.';
+  if (best) {
+    ui.terminalDocLink.href = getDocLinkForCommand(best.candidate);
+    ui.terminalDocLink.textContent = 'Official Kubernetes docs for nearest command';
+  }
   setSuggestions(ranked.map((item) => item.candidate));
 }
 
