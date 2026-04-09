@@ -255,6 +255,7 @@ const ui = {
   terminalForm: document.getElementById('terminalForm'),
   terminalInput: document.getElementById('terminalInput'),
   terminalGhost: document.getElementById('terminalGhost'),
+  ghostToggleButton: document.getElementById('ghostToggleButton'),
   terminalHint: document.getElementById('terminalHint'),
   terminalDocLink: document.getElementById('terminalDocLink'),
   terminalSuggestions: document.getElementById('terminalSuggestions'),
@@ -296,7 +297,8 @@ const game = {
   soundEnabled: true,
   audioContext: null,
   leftPanelCollapsed: false,
-  rightPanelCollapsed: false
+  rightPanelCollapsed: false,
+  ghostEnabled: true
 };
 
 function loadProgress() {
@@ -307,6 +309,7 @@ function loadProgress() {
     game.unlockedIndex = Math.min(parsed.unlockedIndex || 0, missions.length - 1);
     game.missionIndex = Math.min(parsed.missionIndex || 0, game.unlockedIndex);
     game.soundEnabled = parsed.soundEnabled !== false;
+    game.ghostEnabled = parsed.ghostEnabled !== false;
   } catch {
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -318,7 +321,8 @@ function saveProgress() {
     completed: game.completed,
     missionIndex: game.missionIndex,
     unlockedIndex: game.unlockedIndex,
-    soundEnabled: game.soundEnabled
+    soundEnabled: game.soundEnabled,
+    ghostEnabled: game.ghostEnabled
   }));
 }
 
@@ -522,8 +526,12 @@ function updateTerminalGuidance() {
   }
 
   if (partialCandidate) {
-    ui.terminalGhost.innerHTML = renderGhostCommand(raw, partialCandidate);
-    ui.terminalHint.textContent = `Still on track… Press Tab or → to accept: ${partialCandidate}`;
+    if (game.ghostEnabled) {
+      ui.terminalGhost.innerHTML = renderGhostCommand(raw, partialCandidate);
+      ui.terminalHint.textContent = `Still on track… Press Tab or → to accept: ${partialCandidate}`;
+    } else {
+      ui.terminalHint.textContent = `On track. Suggested completion: ${partialCandidate}`;
+    }
     ui.terminalDocLink.href = getDocLinkForCommand(partialCandidate);
     ui.terminalDocLink.textContent = 'Official Kubernetes docs for this command';
     setSuggestions(ranked);
@@ -658,6 +666,8 @@ function renderStatus() {
   ui.rankValue.textContent = getRankLabel();
   ui.hintCount.textContent = game.hintUses;
   ui.soundToggleButton.textContent = game.soundEnabled ? '🔊 Sound On' : '🔈 Sound Off';
+  ui.ghostToggleButton.textContent = game.ghostEnabled ? '👻 Ghost On' : '👻 Ghost Off';
+  ui.ghostToggleButton.setAttribute('aria-pressed', String(game.ghostEnabled));
 
   const stability = calculateStability();
   ui.stabilityFill.style.width = `${stability}%`;
@@ -1199,6 +1209,13 @@ ui.soundToggleButton.addEventListener('click', () => {
     playUiClick();
   }
   saveProgress();
+  renderStatus();
+});
+ui.ghostToggleButton.addEventListener('click', () => {
+  game.ghostEnabled = !game.ghostEnabled;
+  playUiClick();
+  saveProgress();
+  updateTerminalGuidance();
   renderStatus();
 });
 ui.resetGameButton.addEventListener('click', resetGame);

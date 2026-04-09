@@ -75,7 +75,10 @@
       </section>
 
       <section class="panel terminal-panel">
-        <div class="panel-title">Ops Terminal</div>
+        <div class="panel-header">
+          <div class="panel-title">Ops Terminal</div>
+          <button id="ghostToggleButton" class="panel-toggle secondary" aria-pressed="true">👻 Ghost On</button>
+        </div>
         <div id="terminalOutput" class="terminal-output" aria-live="polite"></div>
         <form id="terminalForm" class="terminal-form">
           <span class="prompt">operator@ckarcade:~$</span>
