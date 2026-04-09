@@ -1244,8 +1244,8 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   if (isFormField && !isTerminalInput) return;
-  if (terminalHasTypedText) {
-    if (event.code === 'Enter' && ui.terminalInput.classList.contains('input-invalid')) {
+  if (isTerminalInput) {
+    if (terminalHasTypedText && event.code === 'Enter' && ui.terminalInput.classList.contains('input-invalid')) {
       const topSuggestion = ui.terminalSuggestions.querySelector('.suggestion-chip');
       if (topSuggestion) {
         event.preventDefault();
