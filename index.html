@@ -24,9 +24,12 @@
       </div>
     </header>
 
-    <main class="grid-layout">
-      <section class="panel mission-panel">
-        <div class="panel-title">Mission Briefing</div>
+    <main id="gridLayout" class="grid-layout">
+      <section id="missionPanel" class="panel mission-panel">
+        <div class="panel-header">
+          <div class="panel-title">Mission Briefing</div>
+          <button id="toggleMissionPanelButton" class="panel-toggle secondary" aria-expanded="true">⟨</button>
+        </div>
         <h2 id="missionTitle"></h2>
         <p id="missionStory" class="mission-story"></p>
         <div class="mission-meta">
@@ -86,8 +89,11 @@
         <div id="terminalSuggestions" class="terminal-suggestions"></div>
       </section>
 
-      <section class="panel dashboard-panel">
-        <div class="panel-title">Campaign Map</div>
+      <section id="dashboardPanel" class="panel dashboard-panel">
+        <div class="panel-header">
+          <div class="panel-title">Campaign Map</div>
+          <button id="toggleDashboardPanelButton" class="panel-toggle secondary" aria-expanded="true">⟩</button>
+        </div>
         <div class="dashboard-card">
           <div class="label">Mission Select</div>
           <div id="missionMap" class="mission-map"></div>

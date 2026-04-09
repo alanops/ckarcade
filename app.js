@@ -235,6 +235,11 @@ const rankThresholds = [
 ];
 
 const ui = {
+  gridLayout: document.getElementById('gridLayout'),
+  missionPanel: document.getElementById('missionPanel'),
+  dashboardPanel: document.getElementById('dashboardPanel'),
+  toggleMissionPanelButton: document.getElementById('toggleMissionPanelButton'),
+  toggleDashboardPanelButton: document.getElementById('toggleDashboardPanelButton'),
   missionTitle: document.getElementById('missionTitle'),
   missionStory: document.getElementById('missionStory'),
   missionZone: document.getElementById('missionZone'),
@@ -289,7 +294,9 @@ const game = {
   solutionStepIndex: 0,
   playbackSpeed: 1,
   soundEnabled: true,
-  audioContext: null
+  audioContext: null,
+  leftPanelCollapsed: false,
+  rightPanelCollapsed: false
 };
 
 function loadProgress() {
@@ -628,6 +635,17 @@ function calculateStability() {
   return Math.max(5, Math.min(100, stability));
 }
 
+function updatePanelLayout() {
+  ui.gridLayout.classList.toggle('left-collapsed', game.leftPanelCollapsed);
+  ui.gridLayout.classList.toggle('right-collapsed', game.rightPanelCollapsed);
+  ui.missionPanel.classList.toggle('panel-collapsed', game.leftPanelCollapsed);
+  ui.dashboardPanel.classList.toggle('panel-collapsed', game.rightPanelCollapsed);
+  ui.toggleMissionPanelButton.textContent = game.leftPanelCollapsed ? '⟩' : '⟨';
+  ui.toggleDashboardPanelButton.textContent = game.rightPanelCollapsed ? '⟨' : '⟩';
+  ui.toggleMissionPanelButton.setAttribute('aria-expanded', String(!game.leftPanelCollapsed));
+  ui.toggleDashboardPanelButton.setAttribute('aria-expanded', String(!game.rightPanelCollapsed));
+}
+
 function renderStatus() {
   const mission = missions[game.missionIndex];
   ui.missionTitle.textContent = mission.title;
@@ -665,6 +683,7 @@ function renderStatus() {
   ui.resetMissionButton.disabled = game.solving;
   ui.nextMissionButton.disabled = game.solving || !game.missionComplete || game.missionIndex >= missions.length - 1;
   ui.terminalInput.disabled = game.solving;
+  updatePanelLayout();
   renderMissionMap();
   renderDashboard();
 }
@@ -1183,6 +1202,14 @@ ui.soundToggleButton.addEventListener('click', () => {
   renderStatus();
 });
 ui.resetGameButton.addEventListener('click', resetGame);
+ui.toggleMissionPanelButton.addEventListener('click', () => {
+  game.leftPanelCollapsed = !game.leftPanelCollapsed;
+  renderStatus();
+});
+ui.toggleDashboardPanelButton.addEventListener('click', () => {
+  game.rightPanelCollapsed = !game.rightPanelCollapsed;
+  renderStatus();
+});
 
 document.addEventListener('keydown', (event) => {
   const target = event.target;
