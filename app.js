@@ -333,8 +333,12 @@ function logLine(text, type = 'normal') {
   ui.terminalOutput.scrollTop = ui.terminalOutput.scrollHeight;
 }
 
+function expandKubectlAlias(command) {
+  return (command || '').replace(/^\s*k(\s+)/i, 'kubectl$1');
+}
+
 function getDocLinkForCommand(command) {
-  const value = (command || '').trim().toLowerCase();
+  const value = expandKubectlAlias(command).trim().toLowerCase();
   if (!value || value === 'help' || value === 'status' || value === 'mission' || value === 'hint') {
     return 'https://kubernetes.io/docs/reference/kubectl/';
   }
@@ -476,7 +480,8 @@ function renderGhostCommand(raw, suggestion) {
 
 function updateTerminalGuidance() {
   const raw = ui.terminalInput.value;
-  const value = raw.trim().toLowerCase();
+  const canonicalRaw = expandKubectlAlias(raw);
+  const value = canonicalRaw.trim().toLowerCase();
   ui.terminalInput.classList.remove('input-invalid', 'input-valid');
   ui.terminalHint.classList.remove('hint-invalid', 'hint-valid');
   ui.terminalGhost.textContent = '';
@@ -494,7 +499,7 @@ function updateTerminalGuidance() {
   const preferredCandidates = kubectlVerbMatch
     ? candidates.filter((candidate) => candidate.toLowerCase().startsWith(`kubectl ${kubectlVerbMatch[1]}`))
     : candidates;
-  const ranked = rankCandidates(raw.trim(), preferredCandidates.length ? preferredCandidates : candidates);
+  const ranked = rankCandidates(canonicalRaw.trim(), preferredCandidates.length ? preferredCandidates : candidates);
   const exactCandidate = candidates.find((candidate) => candidate.toLowerCase() === value);
   const partialCandidate = ranked.find((item) => item.lowerCandidate.startsWith(value))?.candidate;
   const best = ranked[0];
@@ -976,7 +981,7 @@ function handleKubectl(command) {
 }
 
 function executeCommand(rawInput, options = {}) {
-  const command = rawInput.trim();
+  const command = expandKubectlAlias(rawInput).trim();
   if (!command) return;
   if (options.echo !== false) {
     logLine(`operator@ckarcade:~$ ${command}`, 'command');
