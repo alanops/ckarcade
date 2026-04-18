@@ -684,7 +684,7 @@ git commit -m "feat(leitner): selectDueTips, incrementSession, load/save/export/
 - Create: `~/workspace/ops/alanops/cka-tips/index.html`
 - Create: `~/workspace/ops/alanops/cka-tips/README.md`
 
-- [ ] **Step 1: Validate workflow**
+- [x] **Step 1: Validate workflow**
 
 Create `.github/workflows/validate.yml`:
 
@@ -706,7 +706,7 @@ jobs:
       - run: npm test
 ```
 
-- [ ] **Step 2: Pages workflow**
+- [x] **Step 2: Pages workflow**
 
 Create `.github/workflows/pages.yml`:
 
@@ -736,7 +736,7 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-- [ ] **Step 3: `index.html` — DOM-safe tip list**
+- [x] **Step 3: `index.html` — DOM-safe tip list**
 
 ```html
 <!DOCTYPE html>
@@ -764,7 +764,7 @@ fetch('tips.json').then(r => r.json()).then(tips => {
 </body></html>
 ```
 
-- [ ] **Step 4: README**
+- [x] **Step 4: README**
 
 ```markdown
 # cka-tips
@@ -788,20 +788,20 @@ Edit `leitner.js`. Write tests first. `npm test`.
 See design spec in ckarcade repo: `docs/superpowers/specs/2026-04-18-cka-tips-system-design.md`.
 ```
 
-- [ ] **Step 5: Create GitHub repo and push**
+- [x] **Step 5: Create GitHub repo and push**
 
 ```bash
 cd ~/workspace/ops/alanops/cka-tips
 gh repo create alanops/cka-tips --public --source=. --remote=origin --push
 ```
 
-- [ ] **Step 6: Enable Pages**
+- [x] **Step 6: Enable Pages**
 
 ```bash
 gh api -X POST repos/alanops/cka-tips/pages -f build_type=workflow
 ```
 
-- [ ] **Step 7: Verify deploy**
+- [x] **Step 7: Verify deploy**
 
 Wait ~60s for Pages to build, then:
 
@@ -811,7 +811,7 @@ curl -sS https://alanops.github.io/cka-tips/tips.json | head -20
 
 Expected: first seed tips visible.
 
-- [ ] **Step 8: Commit + push**
+- [x] **Step 8: Commit + push**
 
 ```bash
 git add .github README.md index.html
