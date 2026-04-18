@@ -965,7 +965,7 @@ git push
 - Modify: `~/workspace/ops/alanops/kube-blitz/index.html`
 - Modify: `~/workspace/ops/alanops/kube-blitz/styles.css`
 
-- [ ] **Step 1: Add markup (DOM-safe — no inline scripts writing innerHTML)**
+- [x] **Step 1: Add markup (DOM-safe — no inline scripts writing innerHTML)**
 
 In `index.html`, before `</body>`, add:
 
@@ -982,7 +982,7 @@ In `index.html`, before `</body>`, add:
 </section>
 ```
 
-- [ ] **Step 2: Styles**
+- [x] **Step 2: Styles**
 
 Append to `styles.css`:
 
@@ -998,7 +998,7 @@ Append to `styles.css`:
 .mastery-actions{margin-top:1rem;display:flex;gap:.5rem}
 ```
 
-- [ ] **Step 3: DOM-safe render helpers in `app.js`**
+- [x] **Step 3: DOM-safe render helpers in `app.js`**
 
 Extend `initTipsMode` with:
 
@@ -1078,11 +1078,11 @@ document.getElementById('import-leitner').addEventListener('click', async () => 
 });
 ```
 
-- [ ] **Step 4: Smoke test**
+- [x] **Step 4: Smoke test**
 
 Reload `http://localhost:8090/?tips=1`. Answer correctly — toast appears. Click Mastery — bars render.
 
-- [ ] **Step 5: Commit + push**
+- [x] **Step 5: Commit + push**
 
 ```bash
 git add app.js index.html styles.css
@@ -1098,7 +1098,7 @@ git push
 - Modify: `~/workspace/ops/alanops/kube-blitz/app.js`
 - Modify: `~/workspace/ops/alanops/kube-blitz/README.md`
 
-- [ ] **Step 1: Remove flag gate**
+- [x] **Step 1: Remove flag gate**
 
 In `app.js`, replace:
 
@@ -1116,7 +1116,7 @@ initTipsMode().catch(err => {
 });
 ```
 
-- [ ] **Step 2: Update README**
+- [x] **Step 2: Update README**
 
 Append to `~/workspace/ops/alanops/kube-blitz/README.md`:
 
@@ -1126,11 +1126,11 @@ Prompts come from the shared [cka-tips](https://github.com/alanops/cka-tips) cor
 Mastery state is tracked in `localStorage['cka.leitner.v1']` and shared with CKArcade.
 ```
 
-- [ ] **Step 3: Smoke test at root URL (no flag)**
+- [x] **Step 3: Smoke test at root URL (no flag)**
 
 Open `http://localhost:8090/` — tips mode should be default.
 
-- [ ] **Step 4: Commit + push**
+- [x] **Step 4: Commit + push**
 
 ```bash
 git add app.js README.md
