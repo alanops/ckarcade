@@ -66,7 +66,7 @@
 - Create: `~/workspace/ops/alanops/cka-tips/validate.mjs`
 - Create: `~/workspace/ops/alanops/cka-tips/.gitignore`
 
-- [ ] **Step 1: Create directory and init git**
+- [x] **Step 1: Create directory and init git**
 
 ```bash
 mkdir -p ~/workspace/ops/alanops/cka-tips
@@ -74,7 +74,7 @@ cd ~/workspace/ops/alanops/cka-tips
 git init -b main
 ```
 
-- [ ] **Step 2: Write `package.json`**
+- [x] **Step 2: Write `package.json`**
 
 ```json
 {
@@ -94,7 +94,7 @@ git init -b main
 }
 ```
 
-- [ ] **Step 3: Write `.gitignore`**
+- [x] **Step 3: Write `.gitignore`**
 
 ```
 node_modules/
@@ -102,7 +102,7 @@ node_modules/
 coverage/
 ```
 
-- [ ] **Step 4: Write `tip-schema.json`**
+- [x] **Step 4: Write `tip-schema.json`**
 
 ```json
 {
@@ -129,7 +129,7 @@ coverage/
 }
 ```
 
-- [ ] **Step 5: Write the first seed tip in `tips.json`**
+- [x] **Step 5: Write the first seed tip in `tips.json`**
 
 ```json
 [
@@ -148,10 +148,10 @@ coverage/
 ]
 ```
 
-- [ ] **Step 6: Write `validate.mjs`**
+- [x] **Step 6: Write `validate.mjs`**
 
 ```javascript
-import Ajv from 'ajv';
+import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { readFileSync } from 'node:fs';
 
@@ -180,7 +180,7 @@ for (const tip of tips) {
 console.log(`OK: ${tips.length} tips valid`);
 ```
 
-- [ ] **Step 7: Install deps and run validator**
+- [x] **Step 7: Install deps and run validator**
 
 ```bash
 cd ~/workspace/ops/alanops/cka-tips
@@ -190,7 +190,7 @@ npm run validate
 
 Expected: `OK: 1 tips valid`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add package.json tip-schema.json tips.json validate.mjs .gitignore
