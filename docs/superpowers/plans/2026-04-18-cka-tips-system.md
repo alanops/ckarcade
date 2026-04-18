@@ -830,13 +830,13 @@ git push
 - Modify: `~/workspace/ops/alanops/kube-blitz/index.html`
 - Modify: `~/workspace/ops/alanops/kube-blitz/app.js`
 
-- [ ] **Step 1: Copy `leitner.js` into kube-blitz**
+- [x] **Step 1: Copy `leitner.js` into kube-blitz**
 
 ```bash
 cp ~/workspace/ops/alanops/cka-tips/leitner.js ~/workspace/ops/alanops/kube-blitz/leitner.js
 ```
 
-- [ ] **Step 2: Write `normalise.js`**
+- [x] **Step 2: Write `normalise.js`**
 
 ```javascript
 export function normalise(cmd) {
@@ -856,7 +856,7 @@ export function matches(typed, answer, alternates = []) {
 }
 ```
 
-- [ ] **Step 3: Write `tips-loader.js`**
+- [x] **Step 3: Write `tips-loader.js`**
 
 ```javascript
 const TIPS_URL = 'https://alanops.github.io/cka-tips/tips.json';
@@ -891,7 +891,7 @@ function mapDomainToCategory(domain, subtopic) {
 }
 ```
 
-- [ ] **Step 4: Include scripts in `index.html`**
+- [x] **Step 4: Include scripts in `index.html`**
 
 Find the existing `<script src="app.js"></script>` line and insert before it:
 
@@ -901,7 +901,7 @@ Find the existing `<script src="app.js"></script>` line and insert before it:
 <script type="module" src="normalise.js"></script>
 ```
 
-- [ ] **Step 5: Wire Leitner into `app.js` behind a flag**
+- [x] **Step 5: Wire Leitner into `app.js` behind a flag**
 
 At the end of `app.js`, after the existing game logic, append:
 
@@ -939,7 +939,7 @@ if (tipsFlagOn) {
 
 Find the answer-check site in `app.js` (grep `acceptable` near line 543). When `window.__tipsCheckAnswer` is defined, call it instead of the existing `acceptable.includes(...)` comparison; otherwise fall back.
 
-- [ ] **Step 6: Smoke test locally**
+- [x] **Step 6: Smoke test locally**
 
 ```bash
 cd ~/workspace/ops/alanops/kube-blitz
@@ -948,7 +948,7 @@ python3 -m http.server 8090
 
 Open `http://localhost:8090/?tips=1`. Play a round; confirm prompts come from the live tips corpus. Open DevTools and inspect `localStorage.getItem('cka.leitner.v1')` — boxes should update on correct/wrong answers.
 
-- [ ] **Step 7: Commit + push**
+- [x] **Step 7: Commit + push**
 
 ```bash
 git add leitner.js tips-loader.js normalise.js index.html app.js
