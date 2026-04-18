@@ -71,6 +71,17 @@
           </div>
         </div>
         <div id="missionResult" class="mission-result hidden"></div>
+        <section id="focus-banner" class="focus-banner hidden"></section>
+        <section id="pro-tip-card" class="pro-tip-card hidden">
+          <h3>Pro Tip</h3>
+          <p id="pro-tip-principle"></p>
+          <a id="pro-tip-docs" target="_blank" rel="noreferrer">docs &#8599;</a>
+          <small id="pro-tip-delta"></small>
+        </section>
+        <div class="tips-actions">
+          <button id="export-leitner" class="secondary">Export mastery</button>
+          <button id="import-leitner" class="secondary">Import mastery</button>
+        </div>
         <div class="shortcut-note">Shortcuts: Space play/pause · [ back · ] forward · H hint · R restart mission · M toggle sound · Restart Campaign returns to mission 1</div>
       </section>
 
@@ -122,6 +133,8 @@
     </main>
   </div>
 
+  <script type="module" src="leitner.js"></script>
+  <script type="module" src="tips-loader.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

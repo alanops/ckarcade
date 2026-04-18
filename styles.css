@@ -535,3 +535,10 @@ pre {
     height: 400px;
   }
 }
+
+.pro-tip-card{border:1px solid #0ff;padding:1rem;margin:1rem 0;background:#001}
+.pro-tip-card.hidden{display:none}
+.focus-banner{background:#110;color:#ff0;padding:.5rem 1rem;border:1px solid #ff0;margin-bottom:.5rem}
+.focus-banner.hidden{display:none}
+.tips-actions{display:flex;gap:.5rem;margin-top:1rem}
+
