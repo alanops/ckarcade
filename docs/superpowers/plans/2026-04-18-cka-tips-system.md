@@ -1148,13 +1148,13 @@ git push
 - Modify: `~/workspace/ops/alanops/ckarcade/app.js`
 - Modify: `~/workspace/ops/alanops/ckarcade/index.html`
 
-- [ ] **Step 1: Copy Leitner**
+- [x] **Step 1: Copy Leitner**
 
 ```bash
 cp ~/workspace/ops/alanops/cka-tips/leitner.js ~/workspace/ops/alanops/ckarcade/leitner.js
 ```
 
-- [ ] **Step 2: Write `tips-loader.js`**
+- [x] **Step 2: Write `tips-loader.js`**
 
 ```javascript
 const TIPS_URL = 'https://alanops.github.io/cka-tips/tips.json';
@@ -1175,7 +1175,7 @@ export async function loadTips() {
 }
 ```
 
-- [ ] **Step 3: Tag the 6 existing missions**
+- [x] **Step 3: Tag the 6 existing missions**
 
 In `app.js`, add `tipsExercised` to each mission (inside the `const missions = [...]` array):
 
@@ -1190,7 +1190,7 @@ In `app.js`, add `tipsExercised` to each mission (inside the `const missions = [
 
 Add the field as the last property of each mission object.
 
-- [ ] **Step 4: Include modules in `index.html`**
+- [x] **Step 4: Include modules in `index.html`**
 
 Before the existing `<script src="app.js">`:
 
@@ -1199,7 +1199,7 @@ Before the existing `<script src="app.js">`:
 <script type="module" src="tips-loader.js"></script>
 ```
 
-- [ ] **Step 5: Wire recording at mission-complete**
+- [x] **Step 5: Wire recording at mission-complete**
 
 At the end of `app.js`, append:
 
@@ -1232,7 +1232,7 @@ if (tipsFlagOn) initCkArcadeTips().catch(err => console.error('tips init failed'
 
 Hook `recordMissionTips(mission.id, true)` wherever the existing code flips mission state to complete (grep `missionComplete = true`).
 
-- [ ] **Step 6: Smoke test**
+- [x] **Step 6: Smoke test**
 
 ```bash
 cd ~/workspace/ops/alanops/ckarcade
@@ -1241,7 +1241,7 @@ python3 -m http.server 8080
 
 Open `http://localhost:8080/?tips=1`. Solve "The Wrong Image". Check DevTools `localStorage.getItem('cka.leitner.v1')` — `kubectl-set-image` should advance to box 2.
 
-- [ ] **Step 7: Commit + push**
+- [x] **Step 7: Commit + push**
 
 ```bash
 git add leitner.js tips-loader.js app.js index.html
@@ -1258,7 +1258,7 @@ git push
 - Modify: `~/workspace/ops/alanops/ckarcade/index.html`
 - Modify: `~/workspace/ops/alanops/ckarcade/styles.css`
 
-- [ ] **Step 1: Markup**
+- [x] **Step 1: Markup**
 
 In `index.html`, inside the mission-complete UI region, add:
 
@@ -1276,7 +1276,7 @@ In `index.html`, inside the mission-complete UI region, add:
 </div>
 ```
 
-- [ ] **Step 2: Styles**
+- [x] **Step 2: Styles**
 
 Append to `styles.css`:
 
@@ -1288,7 +1288,7 @@ Append to `styles.css`:
 .tips-actions{display:flex;gap:.5rem;margin-top:1rem}
 ```
 
-- [ ] **Step 3: Render the card (DOM-safe, textContent only)**
+- [x] **Step 3: Render the card (DOM-safe, textContent only)**
 
 Extend `recordMissionTips` and add helpers in `app.js`:
 
@@ -1339,7 +1339,7 @@ function renderFocusBanner() {
 
 Call `renderFocusBanner()` at the end of `initCkArcadeTips` (after `saveState(leitnerState)`).
 
-- [ ] **Step 4: Export / import buttons**
+- [x] **Step 4: Export / import buttons**
 
 ```javascript
 document.getElementById('export-leitner').addEventListener('click', async () => {
@@ -1362,11 +1362,11 @@ document.getElementById('import-leitner').addEventListener('click', async () => 
 });
 ```
 
-- [ ] **Step 5: Smoke test**
+- [x] **Step 5: Smoke test**
 
 Reload `http://localhost:8080/?tips=1`. Solve "The Wrong Image". Confirm Pro Tip card appears with `kubectl-set-image` principle, docs link, and box delta.
 
-- [ ] **Step 6: Commit + push**
+- [x] **Step 6: Commit + push**
 
 ```bash
 git add app.js index.html styles.css
@@ -1382,7 +1382,7 @@ git push
 - Modify: `~/workspace/ops/alanops/ckarcade/app.js`
 - Modify: `~/workspace/ops/alanops/ckarcade/README.md`
 
-- [ ] **Step 1: Remove flag gate**
+- [x] **Step 1: Remove flag gate**
 
 Change:
 
@@ -1398,7 +1398,7 @@ initCkArcadeTips().catch(err => console.error('tips init failed', err));
 
 Remove the `tipsFlagOn` early-return in `recordMissionTips`.
 
-- [ ] **Step 2: README update**
+- [x] **Step 2: README update**
 
 Append to `ckarcade/README.md`:
 
@@ -1407,11 +1407,11 @@ Append to `ckarcade/README.md`:
 Each mission is tagged with CKA tips from the shared [cka-tips](https://github.com/alanops/cka-tips) corpus. Solve a mission → its tips get promoted in a Leitner box. Mastery is shared with Kube-Blitz via localStorage.
 ```
 
-- [ ] **Step 3: Smoke test at root URL**
+- [x] **Step 3: Smoke test at root URL**
 
 `http://localhost:8080/` should now show tips by default.
 
-- [ ] **Step 4: Commit + push**
+- [x] **Step 4: Commit + push**
 
 ```bash
 git add app.js README.md
