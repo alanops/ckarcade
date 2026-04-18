@@ -1307,7 +1307,7 @@ async function initCkArcadeTips() {
 }
 
 async function recordMissionTips(missionId, correct) {
-  if (!tipsFlagOn || !tipsBundle) return;
+  if (!tipsBundle) return;
   const { recordResult, saveState } = await import('./leitner.js');
   const mission = missions.find(m => m.id === missionId);
   const exercised = mission.tipsExercised || [];
@@ -1381,4 +1381,4 @@ if (importLeitnerButton) {
   });
 }
 
-if (tipsFlagOn) initCkArcadeTips().catch(err => console.error('tips init failed', err));
+initCkArcadeTips().catch(err => console.error('tips init failed', err));

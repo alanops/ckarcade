@@ -89,3 +89,6 @@ That makes it a good fit for:
 - more realistic CKA mission chains
 - side-panel docs/reference view
 - optional real-cluster mode backed by `kind`
+
+## Tips + mastery
+Each mission is tagged with CKA tips from the shared [cka-tips](https://github.com/alanops/cka-tips) corpus. Solve a mission → its tips get promoted in a Leitner box. Mastery is shared with Kube-Blitz via localStorage.
