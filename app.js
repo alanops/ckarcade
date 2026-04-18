@@ -28,7 +28,8 @@ const missions = [
     validator: (state) => {
       const pod = state.pods.find((item) => item.name === 'scout');
       return Boolean(pod && pod.image === 'nginx' && pod.status === 'Running' && pod.ready === '1/1');
-    }
+    },
+    tipsExercised: []
   },
   {
     id: 'wrong-image',
@@ -71,7 +72,8 @@ const missions = [
     validator: (state) => {
       const deploy = state.deployments.find((item) => item.name === 'bakery-web');
       return Boolean(deploy && deploy.image === 'nginx:1.27' && deploy.ready === '3/3' && deploy.available === 3);
-    }
+    },
+    tipsExercised: ['kubectl-set-image']
   },
   {
     id: 'lost-signal',
@@ -109,7 +111,8 @@ const missions = [
     validator: (state) => {
       const svc = state.services.find((item) => item.name === 'checkout');
       return Boolean(svc && svc.selector.app === 'checkout-api');
-    }
+    },
+    tipsExercised: []
   },
   {
     id: 'traffic-surge',
@@ -145,7 +148,8 @@ const missions = [
     validator: (state) => {
       const deploy = state.deployments.find((item) => item.name === 'edge-gateway');
       return Boolean(deploy && deploy.replicas === 3 && deploy.ready === '3/3');
-    }
+    },
+    tipsExercised: ['kubectl-scale', 'kubectl-patch-replicas']
   },
   {
     id: 'night-rollout',
@@ -185,7 +189,8 @@ const missions = [
     validator: (state) => {
       const deploy = state.deployments.find((item) => item.name === 'report-api');
       return Boolean(deploy && deploy.image === 'nginx:1.27' && deploy.ready === '2/2');
-    }
+    },
+    tipsExercised: []
   },
   {
     id: 'harbor-routing',
@@ -223,7 +228,8 @@ const missions = [
     validator: (state) => {
       const svc = state.services.find((item) => item.name === 'tracker');
       return Boolean(svc && svc.selector.app === 'tracker-api');
-    }
+    },
+    tipsExercised: []
   }
 ];
 
@@ -771,6 +777,7 @@ function completeMission() {
     : `Mission clear. Replay complete.<br>Time remaining: ${formatTime(game.remainingTime)}<br>Hints used: ${game.hintUses}`;
   logLine(firstClear ? 'Mission clear. District stability restored.' : 'Mission clear. Replay complete.', 'success');
   playSuccessFanfar();
+  recordMissionTips(missionId, true);
   renderStatus();
 }
 
@@ -1284,3 +1291,28 @@ document.addEventListener('keydown', (event) => {
 loadProgress();
 startMission(game.missionIndex);
 ui.terminalInput.focus();
+
+// --- CKA Tips integration (flagged during rollout) ---
+const tipsFlagOn = new URLSearchParams(location.search).has('tips');
+let tipsBundle = null;
+let leitnerState = null;
+
+async function initCkArcadeTips() {
+  const { loadTips } = await import('./tips-loader.js');
+  const { loadState, saveState, incrementSession } = await import('./leitner.js');
+  tipsBundle = await loadTips();
+  leitnerState = incrementSession(loadState());
+  saveState(leitnerState);
+}
+
+async function recordMissionTips(missionId, correct) {
+  if (!tipsFlagOn || !tipsBundle) return;
+  const { recordResult, saveState } = await import('./leitner.js');
+  const mission = missions.find(m => m.id === missionId);
+  for (const tipId of (mission.tipsExercised || [])) {
+    leitnerState = recordResult(leitnerState, tipId, correct);
+  }
+  saveState(leitnerState);
+}
+
+if (tipsFlagOn) initCkArcadeTips().catch(err => console.error('tips init failed', err));
