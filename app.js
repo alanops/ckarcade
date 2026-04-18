@@ -1303,16 +1303,82 @@ async function initCkArcadeTips() {
   tipsBundle = await loadTips();
   leitnerState = incrementSession(loadState());
   saveState(leitnerState);
+  renderFocusBanner();
 }
 
 async function recordMissionTips(missionId, correct) {
   if (!tipsFlagOn || !tipsBundle) return;
   const { recordResult, saveState } = await import('./leitner.js');
   const mission = missions.find(m => m.id === missionId);
-  for (const tipId of (mission.tipsExercised || [])) {
+  const exercised = mission.tipsExercised || [];
+  const before = exercised.map(id => leitnerState.tips[id]?.box ?? 1);
+  for (const tipId of exercised) {
     leitnerState = recordResult(leitnerState, tipId, correct);
   }
   saveState(leitnerState);
+  if (exercised.length) showProTipCard(exercised[0], before[0]);
+}
+
+function showProTipCard(tipId, prevBox) {
+  const tip = tipsBundle.byId.get(tipId);
+  if (!tip) return;
+  const card = document.getElementById('pro-tip-card');
+  if (!card) return;
+  document.getElementById('pro-tip-principle').textContent = tip.principle;
+  const docs = document.getElementById('pro-tip-docs');
+  docs.href = tip.docs;
+  const now = leitnerState.tips[tipId].box;
+  const suffix = now === 5 ? ' · mastered' : '';
+  document.getElementById('pro-tip-delta').textContent =
+    `${tip.id} box ${prevBox} → ${now}${suffix}`;
+  card.classList.remove('hidden');
+}
+
+function renderFocusBanner() {
+  const domains = ['cluster', 'workloads', 'networking', 'storage', 'troubleshooting'];
+  let weakest = domains[0];
+  let weakestScore = Infinity;
+  for (const d of domains) {
+    const dt = tipsBundle.tips.filter(t => t.domain === d);
+    if (!dt.length) continue;
+    const m = dt.filter(t => leitnerState.tips[t.id]?.mastered).length;
+    const score = m / dt.length;
+    if (score < weakestScore) { weakestScore = score; weakest = d; }
+  }
+  const banner = document.getElementById('focus-banner');
+  if (!banner) return;
+  banner.textContent = `Today's focus: ${weakest}`;
+  banner.classList.remove('hidden');
+}
+
+const exportLeitnerButton = document.getElementById('export-leitner');
+if (exportLeitnerButton) {
+  exportLeitnerButton.addEventListener('click', async () => {
+    const { exportJson } = await import('./leitner.js');
+    if (!leitnerState) {
+      alert('Tips not initialised yet.');
+      return;
+    }
+    await navigator.clipboard.writeText(exportJson(leitnerState));
+    alert('Copied Leitner state to clipboard.');
+  });
+}
+
+const importLeitnerButton = document.getElementById('import-leitner');
+if (importLeitnerButton) {
+  importLeitnerButton.addEventListener('click', async () => {
+    const { importJson, saveState } = await import('./leitner.js');
+    const json = prompt('Paste Leitner state JSON:');
+    if (!json) return;
+    try {
+      leitnerState = importJson(json);
+      saveState(leitnerState);
+      if (tipsBundle) renderFocusBanner();
+      alert('Imported.');
+    } catch (e) {
+      alert('Import failed: ' + e.message);
+    }
+  });
 }
 
 if (tipsFlagOn) initCkArcadeTips().catch(err => console.error('tips init failed', err));
