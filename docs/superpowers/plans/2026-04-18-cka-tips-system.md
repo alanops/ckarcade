@@ -1427,7 +1427,7 @@ git push
 - Create: `~/workspace/ops/alanops/cka-tips/CONTRIBUTING.md`
 - Create: `~/workspace/ops/alanops/cka-tips/.github/ISSUE_TEMPLATE/new-tip.yml`
 
-- [ ] **Step 1: Contributing guide**
+- [x] **Step 1: Contributing guide**
 
 ```markdown
 # Contributing tips
@@ -1449,7 +1449,7 @@ git push
 Target: +10 tips per week, weighted toward weak exam domains per mastery data.
 ```
 
-- [ ] **Step 2: Issue template**
+- [x] **Step 2: Issue template**
 
 Create `.github/ISSUE_TEMPLATE/new-tip.yml`:
 
@@ -1477,7 +1477,7 @@ body:
     validations: { required: true }
 ```
 
-- [ ] **Step 3: Commit + push**
+- [x] **Step 3: Commit + push**
 
 ```bash
 cd ~/workspace/ops/alanops/cka-tips
