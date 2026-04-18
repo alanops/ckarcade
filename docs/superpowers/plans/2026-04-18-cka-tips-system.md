@@ -204,7 +204,7 @@ git commit -m "feat: scaffold cka-tips repo with schema and first seed tip"
 **Files:**
 - Modify: `~/workspace/ops/alanops/cka-tips/tips.json`
 
-- [ ] **Step 1: Replace tips.json with 10 seed tips**
+- [x] **Step 1: Replace tips.json with 10 seed tips**
 
 ```json
 [
@@ -331,7 +331,7 @@ git commit -m "feat: scaffold cka-tips repo with schema and first seed tip"
 ]
 ```
 
-- [ ] **Step 2: Validate**
+- [x] **Step 2: Validate**
 
 ```bash
 cd ~/workspace/ops/alanops/cka-tips
@@ -340,7 +340,7 @@ npm run validate
 
 Expected: `OK: 10 tips valid`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tips.json
@@ -355,7 +355,7 @@ git commit -m "feat: seed 10 kubectl imperative tips"
 - Create: `~/workspace/ops/alanops/cka-tips/leitner.js`
 - Create: `~/workspace/ops/alanops/cka-tips/leitner.test.js`
 
-- [ ] **Step 1: Write failing tests first**
+- [x] **Step 1: Write failing tests first**
 
 Create `leitner.test.js`:
 
@@ -424,7 +424,7 @@ describe('BOX_CADENCE', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests — expect failure**
+- [x] **Step 2: Run tests — expect failure**
 
 ```bash
 cd ~/workspace/ops/alanops/cka-tips
@@ -433,7 +433,7 @@ npm test -- leitner.test.js
 
 Expected: all tests fail (module does not exist).
 
-- [ ] **Step 3: Implement `leitner.js`**
+- [x] **Step 3: Implement `leitner.js`**
 
 ```javascript
 export const CURRENT_VERSION = 1;
@@ -477,7 +477,7 @@ export function recordResult(state, tipId, correct) {
 }
 ```
 
-- [ ] **Step 4: Run tests — expect all pass**
+- [x] **Step 4: Run tests — expect all pass**
 
 ```bash
 npm test -- leitner.test.js
@@ -485,7 +485,7 @@ npm test -- leitner.test.js
 
 Expected: all green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add leitner.js leitner.test.js
@@ -500,7 +500,7 @@ git commit -m "feat(leitner): state, freshState, recordResult promotion/demotion
 - Modify: `~/workspace/ops/alanops/cka-tips/leitner.js`
 - Modify: `~/workspace/ops/alanops/cka-tips/leitner.test.js`
 
-- [ ] **Step 1: Append failing tests**
+- [x] **Step 1: Append failing tests**
 
 Append to `leitner.test.js`:
 
@@ -583,7 +583,7 @@ describe('loadState / saveState', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests — expect failures**
+- [x] **Step 2: Run tests — expect failures**
 
 ```bash
 npm test -- leitner.test.js
@@ -591,7 +591,7 @@ npm test -- leitner.test.js
 
 Expected: failures for undefined exports.
 
-- [ ] **Step 3: Extend `leitner.js`**
+- [x] **Step 3: Extend `leitner.js`**
 
 Append to `leitner.js`:
 
@@ -659,7 +659,7 @@ export function importJson(json) {
 }
 ```
 
-- [ ] **Step 4: Run tests — all green**
+- [x] **Step 4: Run tests — all green**
 
 ```bash
 npm test
@@ -667,7 +667,7 @@ npm test
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add leitner.js leitner.test.js
